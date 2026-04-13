@@ -1,6 +1,4 @@
-﻿using Chip8Emu;
-using System.Reflection.Emit;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace Chip8Emu
 {
@@ -11,13 +9,6 @@ namespace Chip8Emu
         {
             get { return running; }
             set { running = value; }
-        }
-
-        private bool debugMode = false;
-        public bool DebugMode
-        {
-            get { return debugMode; }
-            set { debugMode = value; }
         }
 
         private bool shiftQuirk = false;
@@ -47,6 +38,22 @@ namespace Chip8Emu
             get { return memoryQuirk; }
             set { memoryQuirk = value; }
         }
+
+        private bool clippingQuirk = false;
+        public bool ClippingQuirk
+        {
+            get { return clippingQuirk; }
+            set { clippingQuirk = value; }
+        }
+
+        private bool displayWaitQuirk = false;
+        public bool DisplayWaitQuirk
+        {
+            get { return displayWaitQuirk; }
+            set { displayWaitQuirk = value; }
+        }
+
+        private bool waitingForVBlank = false;
 
         private int frameSize = 10;
         public int FrameSize
@@ -81,14 +88,14 @@ namespace Chip8Emu
             set { video = value; }
         }
 
-        public uint KeyDown 
-        { 
-            set { keypad.@byte![value] = 1; } 
+        public uint KeyDown
+        {
+            set { keypad.@byte![value] = 1; }
         }
 
-        public uint KeyUp 
-        { 
-            set { keypad.@byte![value] = 0; } 
+        public uint KeyUp
+        {
+            set { keypad.@byte![value] = 0; }
         }
 
         private uint I;
@@ -102,11 +109,14 @@ namespace Chip8Emu
         private const uint START_ADDRESS = 0x200;
         private const int FONTSET_SIZE = 80;
         private bool playingSound;
-        private readonly mainForm form = Application.OpenForms.OfType<mainForm>().FirstOrDefault()!;
         private string CurrentOpcodeDescription = String.Empty;
         private readonly uint[] STACK = new uint[16];
-        private bool displayUpdated = false;
-        private bool step = true;
+
+        // Callback for display updates (called by main loop)
+        public Action? OnDisplayUpdate { get; set; }
+
+        // Get the raw video buffer for rendering
+        public byte[] GetVideoBuffer() => video.@byte!;
 
 
         private readonly byte[] FONTS =
@@ -128,38 +138,6 @@ namespace Chip8Emu
 	        0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
 	        0xF0, 0x80, 0xF0, 0x80, 0x80  // F
         ];
-
-        public List<string> DebugStackInfo()
-        {
-            List<string> stak = new();
-            stak.Add("STACK");
-            for (uint i = 0; i < 15; i++)
-                stak.Add(STACK[i].ToString("X"));
-            return stak;
-        }
-
-        public List<string> DebugMainInfo()
-        {
-            List<string> info = new();
-
-            info.Add("V0 V1 V2 V3 V4 V5 V6 V7 V8 V9 VA VB VC VD VE VF");
-            string reg = "";
-            for (uint i = 0; i < 16; i++)
-            {
-                if (registers.@byte![i] < 16) reg += "0";
-                reg += registers.@byte![i].ToString("X");
-                if (i < 15) reg += " ";
-            }
-            info.Add(reg);
-            info.Add("OPCODE = " + CurrentOpcodeDescription);
-            info.Add("PC = " + PC / 2);
-            info.Add("DT = " + DT.ToString("X"));
-            info.Add("ST = " + ST.ToString("X"));
-            info.Add("SP = " + SP.ToString("X"));
-            info.Add("I = " + I.ToString("X"));
-            info.Add("C/F = " + frameSize);
-            return info;
-        }
 
         public Chip8()
         {
@@ -205,27 +183,25 @@ namespace Chip8Emu
             {
                 var currentTime = (DateTime.Now - DateTime.MinValue).TotalMilliseconds;
                 var frameTimer = currentTime;
-                var cycles = 0;
+
+                // Clear VBlank wait at start of each frame
+                waitingForVBlank = false;
 
                 //60Hz loop
                 while ((currentTime - frameTimer) < 16.66)
                 {
-                    //Frame loop
-                    while (cycles < frameSize)
+                    //Frame loop - do a batch of cycles before checking time
+                    for (int cycles = 0; cycles < frameSize; cycles++)
                     {
-                        cycles++;
+                        // Display wait quirk: stop executing until next frame after draw
+                        if (displayWaitQuirk && waitingForVBlank)
+                            break;
 
                         uint opcode = ((uint)memory.@byte![PC] << 8) | memory.@byte![PC + 1];
                         p = PC;
 
                         // Execute current instruction
-                        if (!debugMode)
-                            ExecuteOpcode(opcode);
-                        else
-                        {
-                            while (!step && running) { }
-                            ExecuteOpcode(opcode);
-                        }
+                        ExecuteOpcode(opcode);
 
                         beat++;
                         string op = opcode.ToString("X4");
@@ -235,23 +211,22 @@ namespace Chip8Emu
                         if (beat == 10)
                             running = false;
                     }
-                    currentTime = (DateTime.Now - DateTime.MinValue).TotalMilliseconds; ;
+
+                    // Display wait quirk: wait for remaining frame time then break 
+                    if (displayWaitQuirk && waitingForVBlank)
+                    {
+                        double remaining = 16.66 - (currentTime - frameTimer);
+                        if (remaining > 0)
+                            Thread.Sleep((int)remaining);
+                        break;
+                    }
+
+                    currentTime = (DateTime.Now - DateTime.MinValue).TotalMilliseconds;
                 }
                 UpdateTimers();
                 UpdateDisplay();
             }
             running = false;
-        }
-
-        public void Pause()
-        {
-            debugMode = !debugMode;
-            if (!debugMode) Step();
-        }
-
-        public void Step()
-        {
-            step = true;
         }
 
         public void Stop()
@@ -263,12 +238,6 @@ namespace Chip8Emu
         {
             PC += 2;
             CallOpcode(opcode);
-
-            if (debugMode)
-            {
-                step = false;
-                while (!step & running) { }
-            }
         }
 
         private void CallOpcode(uint opcode)
@@ -319,24 +288,22 @@ namespace Chip8Emu
             if (ST > 0)
             {
                 if (!playingSound)
-                    Beep(ST);
+                {
+                    playingSound = true;
+                    Sound.PlaySound(500, (int)(ST * (1000f / 60)));
+                }
                 ST--;
             }
-        }
-
-        private void Beep(uint st)
-        {
-            Task.Run(() =>
+            else if (playingSound)
             {
-                playingSound = true;
-                Sound.PlaySound(500, (int)(st * (1000f / 60)));
                 playingSound = false;
-            });
+                Sound.StopSound();
+            }
         }
 
         private void UpdateDisplay()
         {
-            form.RenderScreen();
+            OnDisplayUpdate?.Invoke();
         }
 
         private void OP_00E0(uint opcode)
@@ -559,19 +526,31 @@ namespace Chip8Emu
             registers.@byte![15] = 0;
             for (uint row = 0; row < height; row++)
             {
+                // Clipping: stop drawing rows if we go past screen edge
+                if (clippingQuirk && yPos + row >= VIDEO_HEIGHT)
+                    break;
+
                 uint spriteByte = memory.@byte![I + row];
                 for (uint col = 0; col < 8; col++)
                 {
-                    uint vp = (yPos + row) % VIDEO_HEIGHT * VIDEO_WIDTH + (xPos + col) % VIDEO_WIDTH;
+                    // Clipping: skip pixels past screen edge
+                    if (clippingQuirk && xPos + col >= VIDEO_WIDTH)
+                        continue;
+
+                    uint vp = clippingQuirk
+                        ? (yPos + row) * VIDEO_WIDTH + (xPos + col)
+                        : (yPos + row) % VIDEO_HEIGHT * VIDEO_WIDTH + (xPos + col) % VIDEO_WIDTH;
+
                     if ((spriteByte & (0x80 >> (int)col)) != 0)
                     {
-                        if (vp != 0 && video.@byte![vp] == 1)
+                        if (video.@byte![vp] == 1)
                             registers.@byte![15] = 1;
                         video.@byte![vp] ^= 1;
                     }
                 }
             }
-            displayUpdated = true;
+            // Display wait quirk: signal to wait for next VBlank
+            waitingForVBlank = true;
             CurrentOpcodeDescription += " -  DRW   V" + Vx.ToString("X") + ", V" + Vy.ToString("X") + ", " + height;
         }
 
@@ -664,7 +643,8 @@ namespace Chip8Emu
             uint ii = I;
             for (uint i = 0; i <= Vx; i++)
                 memory.@byte![I + i] = registers.@byte![i];
-            if (memoryQuirk)
+            // Original COSMAC VIP increments I; memoryQuirk disables this for modern ROMs
+            if (!memoryQuirk)
                 I = (I + Vx + 1) & 0xFFFF;
             CurrentOpcodeDescription += " -  LD    #" + ii + "+, V0-F";
         }
@@ -675,7 +655,8 @@ namespace Chip8Emu
             uint ii = I;
             for (uint i = 0; i <= Vx; i++)
                 registers.@byte![i] = memory.@byte![I + i];
-            if (memoryQuirk)
+            // Original COSMAC VIP increments I; memoryQuirk disables this for modern ROMs
+            if (!memoryQuirk)
                 I = (I + Vx + 1) & 0xFFFF;
             CurrentOpcodeDescription += " -  LD    V0-F, #" + ii + "+";
         }
