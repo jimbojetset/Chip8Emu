@@ -8,6 +8,8 @@ obj/
 
 # Git
 .gitignore
+.gitattributes
 
 # macOS
 .DS_Store
+.gitignore
