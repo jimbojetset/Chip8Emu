@@ -9,9 +9,11 @@ Chip-8 is an interpreted programming language developed in the mid-1970s for 8-b
 ## Features
 
 - Full Chip-8 instruction set implementation
-- SDL2-based graphics rendering (64x32 display scaled to 640x320)
+- SDL2-based graphics rendering with OpenGL (64x32 display scaled to 960x480)
 - SDL2 audio for beep/sound timer
+- **ImGui settings window** for live quirk adjustment and ROM selection
 - Configurable quirk modes for compatibility with different ROMs
+- **Embedded demo ROM** — runs without any external files
 - Cross-platform support (macOS, Linux, Windows)
 
 ## Requirements
@@ -45,7 +47,7 @@ dotnet build
 ## Running
 
 ```bash
-# Run with default test ROM
+# Run with embedded demo ROM (no files needed)
 dotnet run
 
 # Run a specific ROM
@@ -54,6 +56,15 @@ dotnet run -- path/to/rom.ch8
 # Run with quirk options
 dotnet run -- ROMS/BREAKOUT.ch8 --s 1 --v 1
 ```
+
+### Settings Window
+
+Press **F1** to open the settings window, where you can:
+- Browse and load ROMs from the `ROMS/` folder
+- Toggle quirk settings in real-time
+- Apply preset configurations (COSMAC VIP, SUPER-CHIP)
+
+The settings window starts minimized — click to expand or press F1 to hide completely.
 
 ## Keyboard Layout
 
@@ -92,6 +103,7 @@ Chip-8 Keypad       Keyboard Mapping
 | F          | V            |
 
 **Additional Controls:**
+- `F1` - Toggle settings window
 - `ESC` - Quit the emulator
 
 ## ROM Compatibility
@@ -158,12 +170,13 @@ The `ROMS/` directory includes several test and game ROMs:
 
 ## Technical Details
 
-- **Display:** 64x32 monochrome pixels (scaled 10x to 640x320)
+- **Display:** 64x32 monochrome pixels (scaled 15x to 960x480)
 - **Memory:** 4KB RAM
 - **Registers:** 16 general-purpose 8-bit registers (V0-VF)
 - **Stack:** 16 levels
 - **Timers:** Delay timer and sound timer (both 60Hz)
 - **Clock Speed:** ~500-1000 instructions per second (configurable via FrameSize)
+- **UI:** ImGui-based settings overlay with Dear ImGui
 
 ## License
 
@@ -174,3 +187,5 @@ This project is provided as-is for educational purposes.
 - Chip-8 technical reference by Cowgod
 - Test ROMs from the Chip-8 community
 - SDL2 C# bindings by ppy
+- Dear ImGui and ImGui.NET for the settings UI
+- Silk.NET for OpenGL bindings
