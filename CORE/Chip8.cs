@@ -112,6 +112,10 @@ namespace Chip8Emu
         private string CurrentOpcodeDescription = String.Empty;
         private readonly uint[] STACK = new uint[16];
 
+        // FX0A key wait state (original VIP waits for press AND release)
+        private bool _waitingForKeyRelease = false;
+        private int _pressedKey = -1;
+
         // Callback for display updates (called by main loop)
         public Action? OnDisplayUpdate { get; set; }
 
@@ -158,6 +162,8 @@ namespace Chip8Emu
             DT = 0;
             playingSound = false;
             waitingForVBlank = false;
+            _waitingForKeyRelease = false;
+            _pressedKey = -1;
 
             // Clear registers
             Array.Clear(registers.@byte!, 0, registers.@byte!.Length);
@@ -647,17 +653,40 @@ namespace Chip8Emu
         private void OP_Fx0A(uint opcode)
         {
             uint Vx = (opcode & 0x0F00) >> 8;
-            bool hit = false;
-            for (uint i = 0; i < 15; i++)
-                if (keypad.@byte![i] != 0)
+
+            // Original COSMAC VIP behavior: wait for key press AND release
+            if (_waitingForKeyRelease)
+            {
+                // We already detected a key press, now wait for it to be released
+                if (keypad.@byte![_pressedKey] == 0)
                 {
-                    registers.@byte![Vx] = (byte)i;
-                    hit = true;
-                    break;
+                    // Key was released, store the key and continue
+                    registers.@byte![Vx] = (byte)_pressedKey;
+                    _waitingForKeyRelease = false;
+                    _pressedKey = -1;
                 }
-            if (!hit)
+                else
+                {
+                    // Still waiting for release, repeat this instruction
+                    PC -= 2;
+                }
+            }
+            else
+            {
+                // Look for any key press
+                for (int i = 0; i < 16; i++)
+                {
+                    if (keypad.@byte![i] != 0)
+                    {
+                        _pressedKey = i;
+                        _waitingForKeyRelease = true;
+                        break;
+                    }
+                }
+                // Keep repeating until a key is pressed
                 PC -= 2;
-            CurrentOpcodeDescription += " -  LD    V" + Vx.ToString("X");
+            }
+            CurrentOpcodeDescription += " -  LD    V" + Vx.ToString("X") + ", K";
         }
 
         private void OP_Fx15(uint opcode)
