@@ -15,6 +15,7 @@ namespace Chip8Emu
         private int _selectedRomIndex = -1;
         private string _romsDirectory = "ROMS";
         private string _currentRomName = "";
+        private bool _applyDefaultLayout = true;
 
         // Quirk state (synced with Chip8)
         private bool _shiftQuirk;
@@ -93,12 +94,17 @@ namespace Chip8Emu
         {
             if (!IsVisible) return;
 
-            ImGui.SetNextWindowSize(new Vector2(280, 310), ImGuiCond.FirstUseEver);
-            ImGui.SetNextWindowPos(new Vector2(0, 0), ImGuiCond.FirstUseEver);
-            ImGui.SetNextWindowCollapsed(true, ImGuiCond.Once);
-            ImGui.SetNextWindowBgAlpha(0.85f); // Semi-transparent background
+            if (_applyDefaultLayout)
+            {
+                ImGui.SetNextWindowSize(UiLayoutDefaults.SettingsWindowSize, ImGuiCond.Always);
+                ImGui.SetNextWindowPos(UiLayoutDefaults.SettingsWindowPosition, ImGuiCond.Always);
+                ImGui.SetNextWindowCollapsed(UiLayoutDefaults.SettingsWindowStartsCollapsed, ImGuiCond.Always);
+                _applyDefaultLayout = false;
+            }
 
-            if (ImGui.Begin("Settings [F1]", ref _isVisible))
+            ImGui.SetNextWindowBgAlpha(UiLayoutDefaults.SettingsWindowBackgroundAlpha);
+
+            if (ImGui.Begin(UiLayoutDefaults.SettingsWindowTitle, ref _isVisible))
             {
                 if (ImGui.BeginTabBar("SettingsTabs"))
                 {
