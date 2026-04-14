@@ -2,7 +2,6 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using ImGuiNET;
-using SDL2;
 using Silk.NET.OpenGL;
 using static SDL2.SDL;
 
@@ -405,5 +404,17 @@ namespace Chip8Emu
             }
             GC.SuppressFinalize(this);
         }
+    }
+
+    /// <summary>
+    /// Centralized defaults for Dear ImGui window layout and appearance.
+    /// </summary>
+    public static class UiLayoutDefaults
+    {
+        public const string SettingsWindowTitle = "Settings [F1]";
+        public static readonly Vector2 SettingsWindowSize = new(280f, 310f);
+        public static readonly Vector2 SettingsWindowPosition = Vector2.Zero;
+        public const bool SettingsWindowStartsCollapsed = true;
+        public const float SettingsWindowBackgroundAlpha = 0.85f;
     }
 }
