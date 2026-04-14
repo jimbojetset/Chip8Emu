@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using SDL2;
+using Silk.NET.OpenGL;
 using static SDL2.SDL;
 
 namespace Chip8Emu
@@ -7,20 +9,31 @@ namespace Chip8Emu
     {
         private const int CHIP8_WIDTH = 64;
         private const int CHIP8_HEIGHT = 32;
-        private const int SCALE = 10;
+        private const int SCALE = 15;
         private const int WINDOW_WIDTH = CHIP8_WIDTH * SCALE;
         private const int WINDOW_HEIGHT = CHIP8_HEIGHT * SCALE;
 
         private IntPtr _window;
-        private IntPtr _renderer;
-        private IntPtr _texture;
+        private IntPtr _glContext;
+        private GL? _gl;
+        private uint _chip8Texture;
+        private uint _quadVao;
+        private uint _quadVbo;
+        private uint _quadShader;
+        private int _texUniformLoc;
         private bool _disposed = false;
 
-        public bool IsRunning { get; private set; } = true;
+        private ImGuiController? _imguiController;
 
-        // Color configuration
-        private readonly SDL_Color _onColor = new() { r = 50, g = 205, b = 50, a = 255 }; // LimeGreen
-        private readonly SDL_Color _offColor = new() { r = 0, g = 0, b = 0, a = 255 }; // Black
+        public bool IsRunning { get; private set; } = true;
+        public GL? GL => _gl;
+        public IntPtr WindowHandle => _window;
+        public int Width => WINDOW_WIDTH;
+        public int Height => WINDOW_HEIGHT;
+
+        // Color configuration (normalized 0-1)
+        private readonly float[] _onColor = { 50f / 255f, 205f / 255f, 50f / 255f }; // LimeGreen
+        private readonly float[] _offColor = { 0f, 0f, 0f }; // Black
 
         public SDL2Window()
         {
@@ -29,13 +42,20 @@ namespace Chip8Emu
                 throw new Exception($"SDL could not initialize! SDL_Error: {SDL_GetError()}");
             }
 
+            // Request OpenGL 3.3 Core Profile
+            SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+            SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 3);
+            SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, (int)SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
+            SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1);
+            SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_DEPTH_SIZE, 24);
+
             _window = SDL_CreateWindow(
                 "Chip8 Emulator",
                 SDL_WINDOWPOS_CENTERED,
                 SDL_WINDOWPOS_CENTERED,
                 WINDOW_WIDTH,
                 WINDOW_HEIGHT,
-                SDL_WindowFlags.SDL_WINDOW_SHOWN
+                SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL_WindowFlags.SDL_WINDOW_OPENGL
             );
 
             if (_window == IntPtr.Zero)
@@ -43,30 +63,134 @@ namespace Chip8Emu
                 throw new Exception($"Window could not be created! SDL_Error: {SDL_GetError()}");
             }
 
-            _renderer = SDL_CreateRenderer(_window, -1, SDL_RendererFlags.SDL_RENDERER_ACCELERATED);
-            if (_renderer == IntPtr.Zero)
+            _glContext = SDL_GL_CreateContext(_window);
+            if (_glContext == IntPtr.Zero)
             {
-                throw new Exception($"Renderer could not be created! SDL_Error: {SDL_GetError()}");
+                throw new Exception($"OpenGL context could not be created! SDL_Error: {SDL_GetError()}");
             }
 
-            _texture = SDL_CreateTexture(
-                _renderer,
-                SDL_PIXELFORMAT_RGBA8888,
-                (int)SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING,
-                CHIP8_WIDTH,
-                CHIP8_HEIGHT
-            );
+            SDL_GL_MakeCurrent(_window, _glContext);
+            SDL_GL_SetSwapInterval(1); // Enable VSync
 
-            if (_texture == IntPtr.Zero)
+            // Initialize OpenGL bindings
+            _gl = GL.GetApi(SDL_GL_GetProcAddress);
+
+            // Create CHIP-8 display texture
+            CreateChip8Texture();
+
+            // Create quad for rendering CHIP-8 display
+            CreateQuadResources();
+
+            // Initialize ImGui
+            _imguiController = new ImGuiController(_gl, _window, WINDOW_WIDTH, WINDOW_HEIGHT);
+        }
+
+        private unsafe void CreateChip8Texture()
+        {
+            _chip8Texture = _gl!.GenTexture();
+            _gl.BindTexture(TextureTarget.Texture2D, _chip8Texture);
+            _gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgb, CHIP8_WIDTH, CHIP8_HEIGHT, 0, PixelFormat.Rgb, PixelType.Float, null);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+        }
+
+        private unsafe void CreateQuadResources()
+        {
+            // Simple fullscreen quad vertices (position + texcoord)
+            float[] quadVertices = {
+                // positions   // texcoords
+                -1f,  1f,      0f, 0f,  // top-left
+                -1f, -1f,      0f, 1f,  // bottom-left
+                 1f, -1f,      1f, 1f,  // bottom-right
+
+                -1f,  1f,      0f, 0f,  // top-left
+                 1f, -1f,      1f, 1f,  // bottom-right
+                 1f,  1f,      1f, 0f   // top-right
+            };
+
+            // Create VAO and VBO
+            _quadVao = _gl!.GenVertexArray();
+            _quadVbo = _gl.GenBuffer();
+
+            _gl.BindVertexArray(_quadVao);
+            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _quadVbo);
+
+            fixed (float* v = quadVertices)
             {
-                throw new Exception($"Texture could not be created! SDL_Error: {SDL_GetError()}");
+                _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(quadVertices.Length * sizeof(float)), v, BufferUsageARB.StaticDraw);
             }
+
+            // Position attribute
+            _gl.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), (void*)0);
+            _gl.EnableVertexAttribArray(0);
+
+            // Texcoord attribute
+            _gl.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+            _gl.EnableVertexAttribArray(1);
+
+            _gl.BindVertexArray(0);
+
+            // Create simple shader
+            string vertexShaderSrc = @"
+                #version 330 core
+                layout (location = 0) in vec2 aPos;
+                layout (location = 1) in vec2 aTexCoord;
+                out vec2 TexCoord;
+                void main() {
+                    gl_Position = vec4(aPos, 0.0, 1.0);
+                    TexCoord = aTexCoord;
+                }
+            ";
+
+            string fragmentShaderSrc = @"
+                #version 330 core
+                in vec2 TexCoord;
+                out vec4 FragColor;
+                uniform sampler2D uTexture;
+                void main() {
+                    FragColor = texture(uTexture, TexCoord);
+                }
+            ";
+
+            uint vs = CompileShader(ShaderType.VertexShader, vertexShaderSrc);
+            uint fs = CompileShader(ShaderType.FragmentShader, fragmentShaderSrc);
+
+            _quadShader = _gl.CreateProgram();
+            _gl.AttachShader(_quadShader, vs);
+            _gl.AttachShader(_quadShader, fs);
+            _gl.LinkProgram(_quadShader);
+
+            _gl.DeleteShader(vs);
+            _gl.DeleteShader(fs);
+
+            _texUniformLoc = _gl.GetUniformLocation(_quadShader, "uTexture");
+        }
+
+        private uint CompileShader(ShaderType type, string source)
+        {
+            uint shader = _gl!.CreateShader(type);
+            _gl.ShaderSource(shader, source);
+            _gl.CompileShader(shader);
+
+            _gl.GetShader(shader, ShaderParameterName.CompileStatus, out int success);
+            if (success == 0)
+            {
+                string info = _gl.GetShaderInfoLog(shader);
+                throw new Exception($"Shader compilation failed: {info}");
+            }
+
+            return shader;
         }
 
         public void ProcessEvents(Chip8 chip8)
         {
             while (SDL_PollEvent(out SDL_Event e) != 0)
             {
+                // Forward events to ImGui
+                _imguiController?.ProcessEvent(e);
+
                 switch (e.type)
                 {
                     case SDL_EventType.SDL_QUIT:
@@ -134,40 +258,59 @@ namespace Chip8Emu
             };
         }
 
+        public void BeginFrame(float deltaTime)
+        {
+            _imguiController?.NewFrame(deltaTime);
+        }
+
         public unsafe void Render(byte[] videoBuffer)
         {
-            // Lock texture for pixel access
-            if (SDL_LockTexture(_texture, IntPtr.Zero, out IntPtr pixels, out int pitch) != 0)
-            {
-                Console.WriteLine($"Failed to lock texture: {SDL_GetError()}");
-                return;
-            }
-
-            uint* pixelPtr = (uint*)pixels;
-
+            // Convert CHIP-8 video buffer to RGB float texture data
+            float[] textureData = new float[CHIP8_WIDTH * CHIP8_HEIGHT * 3];
             for (int y = 0; y < CHIP8_HEIGHT; y++)
             {
                 for (int x = 0; x < CHIP8_WIDTH; x++)
                 {
-                    int index = y * CHIP8_WIDTH + x;
-                    bool isOn = videoBuffer[index] != 0;
-
-                    // RGBA8888 format
-                    SDL_Color color = isOn ? _onColor : _offColor;
-                    pixelPtr[y * (pitch / 4) + x] =
-                        ((uint)color.r << 24) |
-                        ((uint)color.g << 16) |
-                        ((uint)color.b << 8) |
-                        color.a;
+                    int bufIndex = y * CHIP8_WIDTH + x;
+                    int texIndex = (y * CHIP8_WIDTH + x) * 3;
+                    bool isOn = videoBuffer[bufIndex] != 0;
+                    float[] color = isOn ? _onColor : _offColor;
+                    textureData[texIndex + 0] = color[0];
+                    textureData[texIndex + 1] = color[1];
+                    textureData[texIndex + 2] = color[2];
                 }
             }
 
-            SDL_UnlockTexture(_texture);
+            // Upload texture data
+            _gl!.BindTexture(TextureTarget.Texture2D, _chip8Texture);
+            fixed (float* data = textureData)
+            {
+                _gl.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, CHIP8_WIDTH, CHIP8_HEIGHT, PixelFormat.Rgb, PixelType.Float, data);
+            }
 
-            // Clear and render
-            SDL_RenderClear(_renderer);
-            SDL_RenderCopy(_renderer, _texture, IntPtr.Zero, IntPtr.Zero);
-            SDL_RenderPresent(_renderer);
+            // Clear screen
+            _gl.ClearColor(0f, 0f, 0f, 1f);
+            _gl.Clear(ClearBufferMask.ColorBufferBit);
+
+            // Draw CHIP-8 display
+            _gl.UseProgram(_quadShader);
+            _gl.Uniform1(_texUniformLoc, 0);
+            _gl.ActiveTexture(TextureUnit.Texture0);
+            _gl.BindTexture(TextureTarget.Texture2D, _chip8Texture);
+            _gl.BindVertexArray(_quadVao);
+            _gl.DrawArrays(PrimitiveType.Triangles, 0, 6);
+            _gl.BindVertexArray(0);
+
+            // Render ImGui on top
+            _imguiController?.Render();
+
+            // Swap buffers
+            SDL_GL_SwapWindow(_window);
+        }
+
+        public uint GetChip8TextureId()
+        {
+            return _chip8Texture;
         }
 
         public void Dispose()
@@ -180,16 +323,23 @@ namespace Chip8Emu
         {
             if (!_disposed)
             {
-                if (_texture != IntPtr.Zero)
+                if (disposing)
                 {
-                    SDL_DestroyTexture(_texture);
-                    _texture = IntPtr.Zero;
+                    _imguiController?.Dispose();
                 }
 
-                if (_renderer != IntPtr.Zero)
+                if (_gl != null)
                 {
-                    SDL_DestroyRenderer(_renderer);
-                    _renderer = IntPtr.Zero;
+                    _gl.DeleteVertexArray(_quadVao);
+                    _gl.DeleteBuffer(_quadVbo);
+                    _gl.DeleteTexture(_chip8Texture);
+                    _gl.DeleteProgram(_quadShader);
+                }
+
+                if (_glContext != IntPtr.Zero)
+                {
+                    SDL_GL_DeleteContext(_glContext);
+                    _glContext = IntPtr.Zero;
                 }
 
                 if (_window != IntPtr.Zero)

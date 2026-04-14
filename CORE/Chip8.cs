@@ -141,10 +141,40 @@ namespace Chip8Emu
 
         public Chip8()
         {
-            PC = START_ADDRESS;
             video = new FIXED_BYTE_ARRAY { @byte = new byte[VIDEO_WIDTH * VIDEO_HEIGHT] };
+            Reset();
+        }
+
+        /// <summary>
+        /// Reset the emulator to initial state (call before loading a new ROM)
+        /// </summary>
+        public void Reset()
+        {
+            // Reset program counter
+            PC = START_ADDRESS;
+            I = 0;
+            SP = 0;
+            ST = 0;
+            DT = 0;
+            playingSound = false;
+            waitingForVBlank = false;
+
+            // Clear registers
+            Array.Clear(registers.@byte!, 0, registers.@byte!.Length);
+
+            // Clear memory and reload fonts
+            Array.Clear(memory.@byte!, 0, memory.@byte!.Length);
             for (uint i = 0; i < FONTSET_SIZE; i++)
                 memory.@byte![i] = FONTS[i];
+
+            // Clear video buffer
+            Array.Clear(video.@byte!, 0, video.@byte!.Length);
+
+            // Clear stack
+            Array.Clear(STACK, 0, STACK.Length);
+
+            // Clear keypad
+            Array.Clear(keypad.@byte!, 0, keypad.@byte!.Length);
         }
 
         private bool LoadROM(string filePath)
@@ -155,12 +185,28 @@ namespace Chip8Emu
                 BinaryReader br = new(fs);
                 long progSize = new FileInfo(filePath).Length;
                 byte[] rom = br.ReadBytes((int)progSize);
-                if (rom.Length <= memory.@byte!.Length)
-                    for (long i = 0; i < rom.Length; i++)
+                return LoadROMFromBytes(rom);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool LoadROMFromBytes(byte[] rom)
+        {
+            try
+            {
+                if (rom.Length <= memory.@byte!.Length - START_ADDRESS)
+                {
+                    for (int i = 0; i < rom.Length; i++)
                         memory.@byte![START_ADDRESS + i] = rom[i];
+                    return true;
+                }
                 else
+                {
                     throw new Exception("Memory Overflow");
-                return true;
+                }
             }
             catch
             {
@@ -170,9 +216,28 @@ namespace Chip8Emu
 
         public void Start(string filePathROM)
         {
+            // Reset to clean state before loading new ROM
+            Reset();
+
             if (!LoadROM(filePathROM))
                 throw new Exception("Failed to load ROM");
 
+            RunEmulator();
+        }
+
+        public void Start(byte[] romData)
+        {
+            // Reset to clean state before loading new ROM
+            Reset();
+
+            if (!LoadROMFromBytes(romData))
+                throw new Exception("Failed to load ROM from embedded data");
+
+            RunEmulator();
+        }
+
+        private void RunEmulator()
+        {
             running = true;
             int beat = 0;
 

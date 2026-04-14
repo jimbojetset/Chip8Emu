@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <PackageReference Include="ppy.SDL2-CS" Version="1.0.82" />
+    <PackageReference Include="ImGui.NET" Version="1.91.0.1" />
+    <PackageReference Include="Silk.NET.OpenGL" Version="2.21.0" />
   </ItemGroup>
 
   <ItemGroup>
