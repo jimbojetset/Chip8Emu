@@ -94,6 +94,24 @@ Chip-8 Keypad       Keyboard Mapping
 **Additional Controls:**
 - `ESC` - Quit the emulator
 
+## ROM Compatibility
+
+Some ROMs may appear to run incorrectly — you might see graphical glitches, flickering sprites, games running too fast, or unexpected behavior. This is usually not a bug in the emulator but rather a result of **CHIP-8 quirks**.
+
+### What are quirks?
+
+CHIP-8 was never a standardized system. Over the decades, many different interpreters were written for various platforms (COSMAC VIP, HP-48 calculators, CHIP-48, SUPER-CHIP, etc.), and each implemented certain instructions slightly differently. Programs written for one interpreter may behave incorrectly on another due to these subtle differences.
+
+Common issues caused by quirks include:
+- **Graphical corruption or missing sprites** — Often caused by shift or VF reset quirk differences
+- **Games running too fast** — The display wait quirk (`--d 1`) can help slow things down
+- **Sprites wrapping incorrectly** — The clipping quirk (`--c 1`) controls edge behavior
+- **Incorrect score/collision detection** — Usually related to VF reset or memory quirks
+
+### What should I do?
+
+If a ROM doesn't work correctly, try enabling different quirk combinations using the command-line switches below. Many classic games were written for SUPER-CHIP or CHIP-48 and require quirks like `--s 1` (shift) and `--v 1` (VF reset). You can also run the `5-quirks.ch8` test ROM to see which quirk settings your ROM might need.
+
 ## Quirk Options
 
 Different Chip-8 programs were written for different interpreters with subtle behavioral differences. Use these switches to enable compatibility quirks:
