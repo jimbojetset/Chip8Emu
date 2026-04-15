@@ -25,11 +25,11 @@ namespace Chip8Emu
             set { jumpQuirk = value; }
         }
 
-        private bool vFReset = false;
+        private bool vFResetQuirk = true;
         public bool VFReset
         {
-            get { return vFReset; }
-            set { vFReset = value; }
+            get { return vFResetQuirk; }
+            set { vFResetQuirk = value; }
         }
 
         private bool memoryQuirk = false;
@@ -46,7 +46,7 @@ namespace Chip8Emu
             set { clippingQuirk = value; }
         }
 
-        private bool displayWaitQuirk = false;
+        private bool displayWaitQuirk = true;
         public bool DisplayWaitQuirk
         {
             get { return displayWaitQuirk; }
@@ -463,7 +463,7 @@ namespace Chip8Emu
             uint Vx = (opcode & 0x0F00) >> 8;
             uint Vy = (opcode & 0x00F0) >> 4;
             registers.@byte![Vx] |= registers.@byte![Vy];
-            if (vFReset)
+            if (vFResetQuirk)
                 registers.@byte![15] = 0;
             CurrentOpcodeDescription += " -  OR    V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
         }
@@ -473,7 +473,7 @@ namespace Chip8Emu
             uint Vx = (opcode & 0x0F00) >> 8;
             uint Vy = (opcode & 0x00F0) >> 4;
             registers.@byte![Vx] &= registers.@byte![Vy];
-            if (vFReset)
+            if (vFResetQuirk)
                 registers.@byte![15] = 0;
             CurrentOpcodeDescription += " -  AND   V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
         }
@@ -483,7 +483,7 @@ namespace Chip8Emu
             uint Vx = (opcode & 0x0F00) >> 8;
             uint Vy = (opcode & 0x00F0) >> 4;
             registers.@byte![Vx] ^= registers.@byte![Vy];
-            if (vFReset)
+            if (vFResetQuirk)
                 registers.@byte![15] = 0;
             CurrentOpcodeDescription += " -  XOR   V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
         }

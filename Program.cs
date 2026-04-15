@@ -78,10 +78,10 @@ namespace Chip8Emu
             string? romPath = null;
             bool shiftQuirk = false;
             bool jumpQuirk = false;
-            bool vfReset = false;
+            bool vfReset = true;
             bool memoryQuirk = false;
             bool clippingQuirk = false;
-            bool displayWaitQuirk = false;
+            bool displayWaitQuirk = true;
 
             for (int i = 0; i < args.Length; i++)
             {
