@@ -313,6 +313,12 @@ namespace Chip8Emu
             return _chip8Texture;
         }
 
+        public void UpdateTitle(bool isRunning)
+        {
+            string status = isRunning ? "Running" : "Stopped";
+            SDL_SetWindowTitle(_window, $"Chip8 Emulator - {status}");
+        }
+
         public void Dispose()
         {
             Dispose(true);

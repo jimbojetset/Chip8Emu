@@ -195,6 +195,9 @@ namespace Chip8Emu
                     // Draw settings window
                     _settingsWindow?.Draw();
 
+                    // Update window title with running status
+                    _window.UpdateTitle(_chip8.Running);
+
                     // Always render (ImGui needs continuous updates)
                     _videoBuffer = _chip8.GetVideoBuffer();
                     _window.Render(_videoBuffer);
