@@ -141,6 +141,10 @@ namespace Chip8Emu
                 // Create settings window with ROM load callback
                 bool startSettingsCollapsed = hasCommandLineSwitches ? UiLayoutDefaults.SettingsWindowStartsCollapsed : false;
                 _settingsWindow = new SettingsWindow(_chip8, LoadRom, startSettingsCollapsed);
+                if (romPath != null)
+                {
+                    _settingsWindow.IsVisible = false;
+                }
                 if (!_useEmbeddedRom && romPath != null)
                 {
                     _settingsWindow.SetCurrentRom(romPath);
