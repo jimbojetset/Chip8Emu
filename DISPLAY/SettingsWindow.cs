@@ -1,8 +1,16 @@
 using System.Numerics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using ImGuiNET;
 
 namespace Chip8Emu
 {
+    internal record RomEntry(
+        [property: JsonPropertyName("title")] string Title,
+        [property: JsonPropertyName("file")] string File,
+        [property: JsonPropertyName("description")] string Description
+    );
+
     /// <summary>
     /// ImGui-based settings window for quirk toggles and ROM selection
     /// </summary>
@@ -11,7 +19,7 @@ namespace Chip8Emu
         private readonly Chip8 _chip8;
         private readonly Action<string> _loadRomCallback;
 
-        private string[] _romFiles = Array.Empty<string>();
+        private RomEntry[] _romEntries = Array.Empty<RomEntry>();
         private int _selectedRomIndex = -1;
         private string _romsDirectory = "ROMS";
         private string _currentRomName = "";
@@ -74,9 +82,28 @@ namespace Chip8Emu
 
         private void RefreshRomList()
         {
+            string jsonPath = Path.Combine(_romsDirectory, "roms.json");
+            if (File.Exists(jsonPath))
+            {
+                try
+                {
+                    string json = File.ReadAllText(jsonPath);
+                    var entries = JsonSerializer.Deserialize<RomEntry[]>(json);
+                    _romEntries = (entries ?? Array.Empty<RomEntry>())
+                        .Where(e => !string.IsNullOrEmpty(e.Title) && !string.IsNullOrEmpty(e.File))
+                        .OrderBy(e => e.Title)
+                        .ToArray();
+                    return;
+                }
+                catch
+                {
+                    // Fall through to filesystem scan
+                }
+            }
+
             if (Directory.Exists(_romsDirectory))
             {
-                _romFiles = Directory.GetFiles(_romsDirectory)
+                _romEntries = Directory.GetFiles(_romsDirectory)
                     .Where(f => f.EndsWith(".ch8", StringComparison.OrdinalIgnoreCase) ||
                                 f.EndsWith(".rom", StringComparison.OrdinalIgnoreCase) ||
                                 !Path.HasExtension(f) ||
@@ -85,11 +112,12 @@ namespace Chip8Emu
                     .Where(f => f != null)
                     .Cast<string>()
                     .OrderBy(f => f)
+                    .Select(f => new RomEntry(f, f, ""))
                     .ToArray();
             }
             else
             {
-                _romFiles = Array.Empty<string>();
+                _romEntries = Array.Empty<RomEntry>();
             }
         }
 
@@ -148,13 +176,13 @@ namespace Chip8Emu
                 RefreshRomList();
             }
             ImGui.SameLine();
-            ImGui.TextDisabled($"({_romFiles.Length})");
+            ImGui.TextDisabled($"({_romEntries.Length})");
 
             // Scrollable list box - use remaining height
             float listHeight = ImGui.GetContentRegionAvail().Y - 25;
             if (ImGui.BeginListBox("##RomList", new Vector2(-1, listHeight)))
             {
-                if (_romFiles.Length == 0)
+                if (_romEntries.Length == 0)
                 {
                     ImGui.TextDisabled("No ROMs found");
                     ImGui.TextDisabled($"Add .ch8 files to:");
@@ -162,12 +190,21 @@ namespace Chip8Emu
                 }
                 else
                 {
-                    for (int i = 0; i < _romFiles.Length; i++)
+                    for (int i = 0; i < _romEntries.Length; i++)
                     {
                         bool isSelected = _selectedRomIndex == i;
-                        if (ImGui.Selectable(_romFiles[i], isSelected))
+                        if (ImGui.Selectable(_romEntries[i].Title, isSelected))
                         {
                             _selectedRomIndex = i;
+                        }
+
+                        if (ImGui.IsItemHovered() && !string.IsNullOrEmpty(_romEntries[i].Description))
+                        {
+                            ImGui.BeginTooltip();
+                            ImGui.PushTextWrapPos(500f);
+                            ImGui.TextUnformatted(_romEntries[i].Description.Replace("<br/>", "\n").Replace("<br />", "\n"));
+                            ImGui.PopTextWrapPos();
+                            ImGui.EndTooltip();
                         }
 
                         // Double-click to load
@@ -181,7 +218,7 @@ namespace Chip8Emu
             }
 
             // Load button
-            bool canLoad = _selectedRomIndex >= 0 && _selectedRomIndex < _romFiles.Length;
+            bool canLoad = _selectedRomIndex >= 0 && _selectedRomIndex < _romEntries.Length;
             if (!canLoad)
             {
                 ImGui.BeginDisabled();
@@ -200,10 +237,11 @@ namespace Chip8Emu
 
         private void LoadSelectedRom()
         {
-            if (_selectedRomIndex >= 0 && _selectedRomIndex < _romFiles.Length)
+            if (_selectedRomIndex >= 0 && _selectedRomIndex < _romEntries.Length)
             {
-                string romPath = Path.Combine(_romsDirectory, _romFiles[_selectedRomIndex]);
-                _currentRomName = _romFiles[_selectedRomIndex];
+                RomEntry entry = _romEntries[_selectedRomIndex];
+                string romPath = Path.Combine(_romsDirectory, entry.File);
+                _currentRomName = entry.Title;
                 _loadRomCallback(romPath);
                 _collapseOnNextDraw = true;
             }
