@@ -76,6 +76,7 @@ namespace Chip8Emu
         {
             // Parse command line arguments
             string? romPath = null;
+            bool hasCommandLineSwitches = false;
             bool shiftQuirk = false;
             bool jumpQuirk = false;
             bool vfReset = true;
@@ -87,6 +88,7 @@ namespace Chip8Emu
             {
                 if (args[i].StartsWith("--"))
                 {
+                    hasCommandLineSwitches = true;
                     string option = args[i][2..];
                     if (i + 1 < args.Length && (args[i + 1] == "0" || args[i + 1] == "1"))
                     {
@@ -137,7 +139,8 @@ namespace Chip8Emu
                 };
 
                 // Create settings window with ROM load callback
-                _settingsWindow = new SettingsWindow(_chip8, LoadRom);
+                bool startSettingsCollapsed = hasCommandLineSwitches ? UiLayoutDefaults.SettingsWindowStartsCollapsed : false;
+                _settingsWindow = new SettingsWindow(_chip8, LoadRom, startSettingsCollapsed);
                 if (!_useEmbeddedRom && romPath != null)
                 {
                     _settingsWindow.SetCurrentRom(romPath);

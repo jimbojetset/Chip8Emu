@@ -16,6 +16,8 @@ namespace Chip8Emu
         private string _romsDirectory = "ROMS";
         private string _currentRomName = "";
         private bool _applyDefaultLayout = true;
+        private readonly bool _startCollapsed;
+        private bool _collapseOnNextDraw;
 
         // Quirk state (synced with Chip8)
         private bool _shiftQuirk;
@@ -32,10 +34,11 @@ namespace Chip8Emu
             set => _isVisible = value;
         }
 
-        public SettingsWindow(Chip8 chip8, Action<string> loadRomCallback)
+        public SettingsWindow(Chip8 chip8, Action<string> loadRomCallback, bool startCollapsed = UiLayoutDefaults.SettingsWindowStartsCollapsed)
         {
             _chip8 = chip8;
             _loadRomCallback = loadRomCallback;
+            _startCollapsed = startCollapsed;
 
             // Initial sync from Chip8 state
             SyncFromChip8();
@@ -98,8 +101,14 @@ namespace Chip8Emu
             {
                 ImGui.SetNextWindowSize(UiLayoutDefaults.SettingsWindowSize, ImGuiCond.Always);
                 ImGui.SetNextWindowPos(UiLayoutDefaults.SettingsWindowPosition, ImGuiCond.Always);
-                ImGui.SetNextWindowCollapsed(UiLayoutDefaults.SettingsWindowStartsCollapsed, ImGuiCond.Always);
+                ImGui.SetNextWindowCollapsed(_startCollapsed, ImGuiCond.Always);
                 _applyDefaultLayout = false;
+            }
+
+            if (_collapseOnNextDraw)
+            {
+                ImGui.SetNextWindowCollapsed(true, ImGuiCond.Always);
+                _collapseOnNextDraw = false;
             }
 
             ImGui.SetNextWindowBgAlpha(UiLayoutDefaults.SettingsWindowBackgroundAlpha);
@@ -111,6 +120,11 @@ namespace Chip8Emu
                     if (ImGui.BeginTabItem("ROMs"))
                     {
                         DrawRomSection();
+                        ImGui.EndTabItem();
+                    }
+                    if (ImGui.BeginTabItem("Keyboard"))
+                    {
+                        DrawKeyboardSection();
                         ImGui.EndTabItem();
                     }
                     if (ImGui.BeginTabItem("Quirks"))
@@ -191,6 +205,7 @@ namespace Chip8Emu
                 string romPath = Path.Combine(_romsDirectory, _romFiles[_selectedRomIndex]);
                 _currentRomName = _romFiles[_selectedRomIndex];
                 _loadRomCallback(romPath);
+                _collapseOnNextDraw = true;
             }
         }
 
@@ -249,6 +264,44 @@ namespace Chip8Emu
                 SyncToChip8();
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("All quirks off");
+        }
+
+        private void DrawKeyboardSection()
+        {
+            ImGui.TextDisabled("CHIP-8 keypad to keyboard mapping");
+            ImGui.Spacing();
+
+            string[] keyLayoutRows =
+            {
+                "1  2  3  C   ->   1  2  3  4",
+                "4  5  6  D   ->   Q  W  E  R",
+                "7  8  9  E   ->   A  S  D  F",
+                "A  0  B  F   ->   Z  X  C  V"
+            };
+
+            float maxRowWidth = 1f;
+            for (int i = 0; i < keyLayoutRows.Length; i++)
+            {
+                float rowWidth = ImGui.CalcTextSize(keyLayoutRows[i]).X;
+                if (rowWidth > maxRowWidth)
+                {
+                    maxRowWidth = rowWidth;
+                }
+            }
+
+            float availableWidth = MathF.Max(1f, ImGui.GetContentRegionAvail().X - 4f);
+            float keyScale = MathF.Min(3f, MathF.Max(1f, availableWidth / maxRowWidth));
+
+            ImGui.SetWindowFontScale(keyScale);
+            for (int i = 0; i < keyLayoutRows.Length; i++)
+            {
+                ImGui.TextUnformatted(keyLayoutRows[i]);
+            }
+            ImGui.SetWindowFontScale(1f);
+
+            ImGui.Spacing();
+            ImGui.TextDisabled("Press ESC to close the emulator.");
+            ImGui.TextDisabled("Press F1 to toggle settings visibility.");
         }
     }
 }

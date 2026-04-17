@@ -11,7 +11,7 @@ Chip-8 is an interpreted programming language developed in the mid-1970s for 8-b
 - Full Chip-8 instruction set implementation
 - SDL2-based graphics rendering with OpenGL (64x32 display scaled to 960x480)
 - SDL2 audio for beep/sound timer
-- **ImGui settings window** for live quirk adjustment and ROM selection
+- **ImGui settings window** for live quirk adjustment, ROM selection, and keyboard mapping
 - Configurable quirk modes for compatibility with different ROMs
 - **Embedded demo ROM** — runs without any external files
 - Cross-platform support (macOS, Linux, Windows)
@@ -61,14 +61,21 @@ dotnet run -- ROMS/BREAKOUT.ch8 --s 1 --v 1
 
 Press **F1** to open the settings window, where you can:
 - Browse and load ROMs from the `ROMS/` folder
+- View the keyboard mapping in the **Keyboard** tab
 - Toggle quirk settings in real-time
 - Apply preset configurations (COSMAC VIP, SUPER-CHIP)
 
-The settings window starts minimized — click to expand or press F1 to hide completely.
+When you click **Load ROM**, the settings window auto-collapses.
+
+Startup behavior:
+- No command-line switches: settings window starts expanded
+- With command-line switches: settings window uses the default minimized startup layout
 
 ## Keyboard Layout
 
 The original Chip-8 had a 16-key hexadecimal keypad. This emulator maps it to your keyboard as follows:
+
+You can also see this mapping live in the settings window under the **Keyboard** tab.
 
 ```
 Chip-8 Keypad       Keyboard Mapping
