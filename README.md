@@ -11,7 +11,7 @@ Chip-8 is an interpreted programming language developed in the mid-1970s for 8-b
 - Full Chip-8 instruction set implementation
 - SDL2-based graphics rendering with OpenGL (64x32 display scaled to 960x480)
 - SDL2 audio for beep/sound timer
-- **ImGui settings window** for live quirk adjustment, ROM selection, and keyboard mapping
+- **ImGui settings window** for live quirk adjustment, ROM selection (with descriptions), and keyboard mapping
 - Configurable quirk modes for compatibility with different ROMs
 - **Embedded demo ROM** — runs without any external files
 - Cross-platform support (macOS, Linux, Windows)
@@ -60,16 +60,37 @@ dotnet run -- ROMS/BREAKOUT.ch8 --s 1 --v 1
 ### Settings Window
 
 Press **F1** to open the settings window, where you can:
-- Browse and load ROMs from the `ROMS/` folder
+- Browse and load ROMs from the `ROMS/` folder — titles and descriptions are read from `ROMS/roms.json`
+- Hover over a ROM title to see its description in a tooltip
 - View the keyboard mapping in the **Keyboard** tab
 - Toggle quirk settings in real-time
 - Apply preset configurations (COSMAC VIP, SUPER-CHIP)
 
-When you click **Load ROM**, the settings window auto-collapses.
+When you click **Load ROM** (or double-click a title), the settings window auto-collapses.
 
 Startup behavior:
 - No command-line switches: settings window starts expanded
-- With command-line switches: settings window uses the default minimized startup layout
+- With command-line switches (or a ROM path): settings window starts hidden
+
+### ROM Catalogue (`roms.json`)
+
+The `ROMS/roms.json` file drives the ROM list in the settings window. Each entry has three fields:
+
+```json
+{
+    "title": "BREAKOUT",
+    "file": "Breakout (Brix hack) [David Winter, 1997].ch8",
+    "description": "Classic Breakout game. Use 4 and 6 to move your paddle."
+}
+```
+
+| Field | Purpose |
+|-------|---------|
+| `title` | Display name shown in the ROM list |
+| `file` | Filename inside the `ROMS/` folder to load |
+| `description` | Tooltip text shown on hover |
+
+If `roms.json` is missing or cannot be parsed the emulator falls back to scanning the `ROMS/` folder directly.
 
 ## Keyboard Layout
 
@@ -159,21 +180,7 @@ dotnet run -- ROMS/game.ch8 --s 1 --v 1 --c 1 --d 1
 
 ## Included Test ROMs
 
-The `ROMS/` directory includes several test and game ROMs:
-
-| ROM | Description |
-|-----|-------------|
-| `1-chip8-logo.ch8` | Displays the Chip-8 logo |
-| `2-ibm-logo.ch8` | Displays the IBM logo |
-| `3-corax+.ch8` | Comprehensive opcode test suite |
-| `4-flags.ch8` | Tests flag behavior |
-| `5-quirks.ch8` | Tests quirk modes |
-| `6-keypad.ch8` | Tests keypad input |
-| `7-beep.ch8` | Tests sound timer |
-| `BREAKOUT.ch8` | Classic Breakout game |
-| `INVADERS.ch8` | Space Invaders clone |
-| `TETRIS.ch8` | Tetris game |
-| `TANK.ch8` | Tank battle game |
+The `ROMS/` directory includes test ROMs and classic games. Titles, filenames, and descriptions for all included ROMs are listed in `ROMS/roms.json` and shown in the settings window ROM list.
 
 ## Technical Details
 
