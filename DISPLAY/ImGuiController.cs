@@ -48,6 +48,10 @@ namespace Chip8Emu
             io.DisplaySize = new Vector2(width, height);
             io.DisplayFramebufferScale = Vector2.One;
             io.ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
+            unsafe
+            {
+                io.NativePtr->IniFilename = null;
+            }
 
             // Set up key mappings
             SetupKeyMappings(io);
