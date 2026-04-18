@@ -74,21 +74,36 @@ Startup behavior:
 
 ### ROM Catalogue (`roms.json`)
 
-The `ROMS/roms.json` file drives the ROM list in the settings window. Each entry has three fields:
+The `ROMS/roms.json` file drives the ROM list in the settings window. Each entry supports the following fields:
 
 ```json
 {
-    "title": "BREAKOUT",
-    "file": "Breakout (Brix hack) [David Winter, 1997].ch8",
-    "description": "Classic Breakout game. Use 4 and 6 to move your paddle."
+    "title": "SPACE INVADERS",
+    "file": "Space Invaders [David Winter].ch8",
+    "description": "Classic Space Invaders. Shoot with 5, move with 4 and 6.",
+    "quirks": { "ShiftQuirk": true }
 }
 ```
 
 | Field | Purpose |
-|-------|---------|
+|-------|-------|
 | `title` | Display name shown in the ROM list |
 | `file` | Filename inside the `ROMS/` folder to load |
 | `description` | Tooltip text shown on hover |
+| `quirks` | Optional — quirks to enable when this ROM is loaded |
+
+The `quirks` object supports any combination of the following boolean fields:
+
+| Field | Quirk |
+|-------|-------|
+| `ShiftQuirk` | Shift VX directly (CHIP-48/SCHIP style) |
+| `JumpQuirk` | BNNN uses VX offset instead of V0 |
+| `VFReset` | Reset VF after logic ops |
+| `MemoryQuirk` | FX55/FX65 do not modify the I register |
+| `ClippingQuirk` | Clip sprites at screen edges instead of wrapping |
+| `DisplayWaitQuirk` | Wait for VBlank after each sprite draw |
+
+When a ROM is loaded from the catalogue, any quirks defined in its entry are **OR'd onto** the current quirk state — existing enabled quirks are never disabled, only additional ones are switched on.
 
 If `roms.json` is missing or cannot be parsed the emulator falls back to scanning the `ROMS/` folder directly.
 
@@ -150,7 +165,9 @@ Common issues caused by quirks include:
 
 ### What should I do?
 
-If a ROM doesn't work correctly, try enabling different quirk combinations using the command-line switches below. Many classic games were written for SUPER-CHIP or CHIP-48 and require quirks like `--s 1` (shift) and `--v 1` (VF reset). You can also run the `5-quirks.ch8` test ROM to see which quirk settings your ROM might need.
+If a ROM doesn't work correctly, try enabling different quirk combinations using the command-line switches below, or toggle them live in the **Quirks** tab of the settings window. Many classic games were written for SUPER-CHIP or CHIP-48 and require quirks like `--s 1` (shift) and `--v 1` (VF reset). You can also run the `QUIRKS` test ROM to see which quirk settings your ROM might need.
+
+ROMs listed in `roms.json` with a `quirks` field will have those quirks applied automatically when loaded from the settings window.
 
 ## Quirk Options
 

@@ -5,10 +5,20 @@ using ImGuiNET;
 
 namespace Chip8Emu
 {
+    internal record RomQuirks(
+        [property: JsonPropertyName("ShiftQuirk")] bool? ShiftQuirk,
+        [property: JsonPropertyName("JumpQuirk")] bool? JumpQuirk,
+        [property: JsonPropertyName("VFReset")] bool? VFReset,
+        [property: JsonPropertyName("MemoryQuirk")] bool? MemoryQuirk,
+        [property: JsonPropertyName("ClippingQuirk")] bool? ClippingQuirk,
+        [property: JsonPropertyName("DisplayWaitQuirk")] bool? DisplayWaitQuirk
+    );
+
     internal record RomEntry(
         [property: JsonPropertyName("title")] string Title,
         [property: JsonPropertyName("file")] string File,
-        [property: JsonPropertyName("description")] string Description
+        [property: JsonPropertyName("description")] string Description,
+        [property: JsonPropertyName("quirks")] RomQuirks? Quirks = null
     );
 
     /// <summary>
@@ -242,6 +252,18 @@ namespace Chip8Emu
                 RomEntry entry = _romEntries[_selectedRomIndex];
                 string romPath = Path.Combine(_romsDirectory, entry.File);
                 _currentRomName = entry.Title;
+
+                if (entry.Quirks != null)
+                {
+                    if (entry.Quirks.ShiftQuirk.HasValue) _shiftQuirk = entry.Quirks.ShiftQuirk.Value;
+                    if (entry.Quirks.JumpQuirk.HasValue) _jumpQuirk = entry.Quirks.JumpQuirk.Value;
+                    if (entry.Quirks.VFReset.HasValue) _vfReset = entry.Quirks.VFReset.Value;
+                    if (entry.Quirks.MemoryQuirk.HasValue) _memoryQuirk = entry.Quirks.MemoryQuirk.Value;
+                    if (entry.Quirks.ClippingQuirk.HasValue) _clippingQuirk = entry.Quirks.ClippingQuirk.Value;
+                    if (entry.Quirks.DisplayWaitQuirk.HasValue) _displayWaitQuirk = entry.Quirks.DisplayWaitQuirk.Value;
+                    SyncToChip8();
+                }
+
                 _loadRomCallback(romPath);
                 _collapseOnNextDraw = true;
             }

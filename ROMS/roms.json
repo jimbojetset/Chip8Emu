@@ -22,7 +22,7 @@
     {
         "title": "ASTRO DODGE",
         "file": "Astro Dodge [Revival Studios, 2008].ch8",
-        "quirks": { "loadStore": true },
+        "quirks": { "MemoryQuirk": true },
         "description": "Astro Dodge (2008), by Revival Studios<br/><br/>Your goal is to make your way through the asteroids field and dodge the asteroids, scoring points for each asteroid you are able to dodge. Button 2,4,6,8 will move your ship, button 5 will start the game."
     },
     {
@@ -38,7 +38,7 @@
     {
         "title": "BLINKY",
         "file": "Blinky [Hans Christian Egeberg, 1991].ch8",
-        "quirks": { "loadStore": true, "shift": true },
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "VFReset": false, "MemoryQuirk": true, "DisplayWaitQuirk": false },
         "description": "Blinky (1991), by Hans Christian Egeberg<br/><br/>Pacman clone.<br/>3, 6 - down/up. 7, 8 - left/right"
     },
     {
@@ -49,7 +49,7 @@
     {
         "title": "BMP VIEWER",
         "file": "BMP Viewer - Hello (C8 example) [Hap, 2005].ch8",
-        "quirks": { "shift": true },
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "VFReset": false, "MemoryQuirk": true, "DisplayWaitQuirk": false },
         "description": "BMP Viewer (2005), by Hap<br/><br/>works with monochrome BMPs only, of course. Put the BMP data (headerless) at offset $30. change offset $0 (200) $00ff to $1202 for Chip-8."
     },
     {
@@ -60,16 +60,19 @@
     {
         "title": "BREAKOUT",
         "file": "Breakout (Brix hack) [David Winter, 1997].ch8",
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "DisplayWaitQuirk": false },
         "description": "Breakout (Brix hack) 1997, by David Winter<br/><br/>This game is an \"arkanoid\" precursor. You have 5 lives, and your goal is the destruction of all the brixs. Use 4 and 6 to move your paddle. The game ends when all the brixs are destroyed. This game is the same than BRIX, but has graphics looking like the game on the Atari 2600 console."
     },
     {
         "title": "BRICK",
         "file": "Brick (Brix hack, 1990).ch8",
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "DisplayWaitQuirk": false },
         "description": "BRICK (Brix hack), 1990<br/><br/>A modified version of BRIX, a CHIP-8 game. Original BRIX by Andreas Gustafsson. This one is a solid wall; no air between bricks! 4, 6 - left/right"
     },
     {
         "title": "BRIX",
         "file": "Brix [Andreas Gustafsson, 1990].ch8",
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "DisplayWaitQuirk": false },
         "description": "Brix (1999), by Andres Gustafsson<br/><br/>Arkanoid clone. 4, 6 - left/right"
     },
     {
@@ -105,6 +108,7 @@
     {
         "title": "CONNECT 4",
         "file": "Connect 4 [David Winter].ch8",
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "VFReset": false, "MemoryQuirk": true, "DisplayWaitQuirk": false },
         "description": "Connect 4, by David Winter<br/><br/>This game is for two players. The goal is to align 4 coins in the game area. Each player's coins are colored. When you drop a coin, it is paced on the latest dropped coin in the same column, or at the bottom if the column is empty. Once the column is full, you cannot place any more coins in it. To select a column, use 4 and 6.<br/><br/>To drop a coin, use 5. There is no winner detection yet. This will be soon avalaible (Hey! I don't spend my life on CHIP8 !)."
     },
     {
@@ -170,6 +174,7 @@
     {
         "title": "HIDDEN",
         "file": "Hidden [David Winter, 1996].ch8",
+        "quirks": { "MemoryQuirk": true },
         "description": "Hidden (1996), by David Winter<br/><br/>HIDDEN is a \"memory\" game. It is very simple to play. The rules are as follow: your goal is to find all the identical cards in a minimum time. You are playing in a 4*4 card grid. You can see only two cards at the same time. Once this time passed, these two cards will remain shown if they are identical, otherwise they will be hidden again. When the game is finished, two scores are shown: SC is your score, corresponding to the number of tries HI is the best score (smallest number of tries made to finish) The keys are: [8] - Move DOWN, [4] - Move LEFT, [5] - Show card, [6] -  Move RIGHT, [2] - Move UP"
     },
     {
@@ -200,7 +205,7 @@
     {
         "title": "KEYPAD TEST",
         "file": "Keypad Test [Hap, 2006].ch8",
-        "quirks": { "shift": true },
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "VFReset": false, "MemoryQuirk": true, "DisplayWaitQuirk": false },
         "description": "Keypad Test (2006), by Hap<br/><br/>press a chip8 key and the pressed char will light up if you want to do something funny, soft-reset the chip8/emulator over and over, and the sprite layout will become messed up ;p"
     },
     {
@@ -266,11 +271,13 @@
     {
         "title": "PONG",
         "file": "Pong [Paul Vervalin, 1990].ch8",
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "DisplayWaitQuirk": false },
         "description": "Pong (1990), by Paul Vervalin"
     },
     {
         "title": "PONG 2",
         "file": "Pong 2 (Pong hack) [David Winter, 1997].ch8",
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "DisplayWaitQuirk": false },
         "description": "Pong 2 (Pong hack, 1997), by David Winter"
     },
     {
@@ -311,7 +318,7 @@
     {
         "title": "ROCKET LAUNCH",
         "file": "Rocket Launch [Jonas Lindstedt].ch8",
-        "quirks": { "loadStore": true },
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "VFReset": false, "MemoryQuirk": true, "DisplayWaitQuirk": false },
         "description": "Another Rocket launcher game by Jonas Lindstedt."
     },
     {
@@ -367,7 +374,7 @@
     {
         "title": "SPACE INVADERS",
         "file": "Space Invaders [David Winter].ch8",
-        "quirks": { "shift": true },
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "VFReset": false, "MemoryQuirk": true, "DisplayWaitQuirk": false },
         "description": "Space Invaders (1978), by David Winter<br/><br/>The well known game. Destroy the invaders with your ship. Shoot with 5, move with 4 and 6. Press 5 to begin a game."
     },
     {
@@ -388,7 +395,7 @@
     {
         "title": "STARS DEMO",
         "file": "Stars [Sergey Naydenov, 2010].ch8",
-        "quirks": { "loadStore": true },
+        "quirks": { "MemoryQuirk": true },
         "description": "Stars Demo (2010), by Sergey Naydenov"
     },
     {
@@ -409,6 +416,7 @@
     {
         "title": "SYZYGY",
         "file": "Syzygy [Roy Trevino, 1990].ch8",
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "DisplayWaitQuirk": false },
         "description": "Syzygy (1990), by Roy Trevino<br/><br/>The object of the game is to seek out \"targets\". You do this with your syzygy. Initially small, the syzygy will grow by some amount each time a target is hit. Eventually, your syzygy will be so long as to make tougher and tougher to get any points (and easier and easier to get killed). Confused? Just try it. To play: 3 - up, 6 - down, 7 - left, 8 - right"
     },
     {
@@ -419,11 +427,13 @@
     {
         "title": "TAPEWORM",
         "file": "Tapeworm [JDR, 1999].ch8",
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "VFReset": false, "MemoryQuirk": true, "DisplayWaitQuirk": false },
         "description": "Tapeworm (1999)<br/><br/>Tron clone; guide the snake around and around."
     },
     {
         "title": "TETRIS",
         "file": "Tetris [Fran Dachille, 1991].ch8",
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "DisplayWaitQuirk": false },
         "description": "Tetris (1991), by Fran Dachille"
     },
     {
@@ -459,11 +469,13 @@
     {
         "title": "VERTICAL BRIX",
         "file": "Vertical Brix [Paul Robson, 1996].ch8",
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "VFReset": false, "MemoryQuirk": true, "DisplayWaitQuirk": false },
         "description": "Vertical Brix (1996), by Paul Robson<br/><br/>Vertical breakout type of game."
     },
     {
         "title": "WALL",
         "file": "Wall [David Winter].ch8",
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "DisplayWaitQuirk": false },
         "description": "Wall, by David Winter<br/><br/>Squash type game."
     },
     {
