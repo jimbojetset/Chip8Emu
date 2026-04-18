@@ -26,6 +26,11 @@
         "description": "Astro Dodge (2008), by Revival Studios<br/><br/>Your goal is to make your way through the asteroids field and dodge the asteroids, scoring points for each asteroid you are able to dodge. Button 2,4,6,8 will move your ship, button 5 will start the game."
     },
     {
+        "title": "BEEP",
+        "file": "beep.ch8",
+        "description": "Beep, by Timendus (CHIP-8 Test Suite)<br/><br/>Tests the sound timer by triggering a series of beeps. Verifies the sound timer counts down correctly and produces audio output."
+    },
+    {
         "title": "BIORHYTHM",
         "file": "Biorhythm [Jef Winsor].ch8",
         "description": "Biorhythm, by Jef Winsor<br/><br/>The theory of Biorhythm states that there are thre predominant cycles that can influence human behavior. These include a 23-day physical cycle, a 28-day emotional cycle and a 33-day intellectual cycle.  All three cycles start at birth and continue throughout life.<br/><br/>Each cycle consists of a positive and a negative period.  Physical, Emotional and Intellectual aspects are enhanced during positive periods.  Poor performance is indicated by the negative period of a cycle.<br/><br/>A critical day occurs on the crossover from the positive to the negative period or vice versa. A critical day indicates instability in a particular aspect. <br/><br/>How to Use Biorhythm: <br/><br/>1. Enter birthdate using 2-digit month, 2-digit day, and 4-digit year.<br/><br/>2. Enter start date using 2-digit month, 2-digit day, and 4-digit year. The start date indicates the first day of the 32-day Biorhythm chart the program will generate.<br/><br/>3. After a period of calculation proportional to the span of time involved, the three cycle curves will be shown for a 32-day period. Each horizontal bit position represents one day in the cycle. The start day, on the left, and every seventh day are indicated by week markers. The first day of a positive or negative period is a critical day.<br/><br/>4. To advance the start date, hold key F down until the desired date is reached. To decrement the start date, hold key B down. These functions allow changing the start date slightly without reentering all the dates and waiting for the calculations to be preformed.<br/><br/>5. Press Key 0 to clear the screen and enter a new set of dates."
@@ -78,6 +83,11 @@
         "description": "Chip8 test program"
     },
     {
+        "title": "CHIP8 LOGO",
+        "file": "chip8-logo.ch8",
+        "description": "CHIP-8 Logo, by Timendus (CHIP-8 Test Suite)<br/><br/>Displays the CHIP-8 logo. Used to verify basic drawing and display initialisation."
+    },
+    {
         "title": "CHIP8 PICTURE",
         "file": "Chip8 Picture.ch8",
         "description": "Chip8 test program"
@@ -96,6 +106,11 @@
         "title": "CONNECT 4",
         "file": "Connect 4 [David Winter].ch8",
         "description": "Connect 4, by David Winter<br/><br/>This game is for two players. The goal is to align 4 coins in the game area. Each player's coins are colored. When you drop a coin, it is paced on the latest dropped coin in the same column, or at the bottom if the column is empty. Once the column is full, you cannot place any more coins in it. To select a column, use 4 and 6.<br/><br/>To drop a coin, use 5. There is no winner detection yet. This will be soon avalaible (Hey! I don't spend my life on CHIP8 !)."
+    },
+    {
+        "title": "CORAX+",
+        "file": "corax+.ch8",
+        "description": "Corax+, by Timendus (CHIP-8 Test Suite)<br/><br/>Tests arithmetic and logic opcodes (ADD, SUB, SUBN, AND, OR, XOR, SHR, SHL) and verifies correct VF flag behavior. Displays pass/fail results for each instruction on screen."
     },
     {
         "title": "CRAPS",
@@ -131,6 +146,11 @@
         "title": "FISHIE",
         "file": "Fishie [Hap, 2005].ch8",
         "description": "Fishie (2005), by Hap<br/><br/>used as internal rom for fish n chips"
+    },
+    {
+        "title": "FLAGS",
+        "file": "flags.ch8",
+        "description": "Flags, by Timendus (CHIP-8 Test Suite)<br/><br/>Tests that the VF flag register is set correctly for all arithmetic and bitwise operations, including carry, borrow, and sprite collision flags."
     },
     {
         "title": "FRAMED MK1",
@@ -171,6 +191,11 @@
         "title": "KALEIDOSCOPE",
         "file": "Kaleidoscope [Joseph Weisbecker, 1978].ch8",
         "description": "Kaleidoscope (1978), by Joseph Weisbecker<br/><br/>Four spots appear in a group at the center of the screen. Press keys 2, 4,  6, or 8 to create a pattern. Keep your pattern smaller than 138 key depressions. Push key 0 to terminate pattern entry. Pushing key 0 causes your pattern to be continuously repeated forming a fascinating, changing kaleidoscope display on the screen. A \"44444442220\" key sequence provides a very nice effect Experiment to find other nice patterns."
+    },
+    {
+        "title": "KEYPAD",
+        "file": "1keypad.ch8",
+        "description": "Keypad, by Timendus (CHIP-8 Test Suite)<br/><br/>Tests all three keypad detection methods: immediate key state (Ex9E/ExA1), wait for key press (Fx0A), and wait for key release. Displays pass/fail for each."
     },
     {
         "title": "KEYPAD TEST",
@@ -257,6 +282,11 @@
         "title": "PUZZLE",
         "file": "Puzzle.ch8",
         "description": "4x4 tile puzzle - rearrange them into the order 0-F."
+    },
+    {
+        "title": "QUIRKS",
+        "file": "quirks.ch8",
+        "description": "Quirks, by Timendus (CHIP-8 Test Suite)<br/><br/>Tests interpreter quirks that vary between CHIP-8 implementations, such as shift behaviour, load/store register incrementing, display clipping, and jumping behaviour."
     },
     {
         "title": "RANDOM NUMBER TEST",
