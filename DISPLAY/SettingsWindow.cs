@@ -261,8 +261,19 @@ namespace Chip8Emu
                     if (entry.Quirks.MemoryQuirk.HasValue) _memoryQuirk = entry.Quirks.MemoryQuirk.Value;
                     if (entry.Quirks.ClippingQuirk.HasValue) _clippingQuirk = entry.Quirks.ClippingQuirk.Value;
                     if (entry.Quirks.DisplayWaitQuirk.HasValue) _displayWaitQuirk = entry.Quirks.DisplayWaitQuirk.Value;
-                    SyncToChip8();
                 }
+                else
+                {
+                    // No ROM-specific quirks provided: reset to COSMAC VIP defaults.
+                    _shiftQuirk = false;
+                    _jumpQuirk = false;
+                    _vfReset = true;
+                    _memoryQuirk = false;
+                    _clippingQuirk = false;
+                    _displayWaitQuirk = true;
+                }
+
+                SyncToChip8();
 
                 _loadRomCallback(romPath);
                 _collapseOnNextDraw = true;

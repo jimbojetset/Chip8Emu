@@ -38,7 +38,7 @@
     {
         "title": "BLINKY",
         "file": "Blinky [Hans Christian Egeberg, 1991].ch8",
-        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "VFReset": false, "MemoryQuirk": true, "DisplayWaitQuirk": false },
+        "quirks": { "ShiftQuirk": true, "JumpQuirk": true, "VFReset": false, "MemoryQuirk": true, "DisplayWaitQuirk": true },
         "description": "Blinky (1991), by Hans Christian Egeberg<br/><br/>Pacman clone.<br/>3, 6 - down/up. 7, 8 - left/right"
     },
     {
