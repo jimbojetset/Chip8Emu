@@ -103,6 +103,7 @@
     {
         "title": "COIN FLIPPING",
         "file": "Coin Flipping [Carmelo Cortez, 1978].ch8",
+        "quirks": { "DisplayWaitQuirk": false },
         "description": "Coin Flipping (1978), by Carmelo Cortez<br/><br/>The game is a Coin FlLpping program. Flip run up and the computer starts to flip a coin, and at the same tine shosing heads and tails on the screen, stopping at the value set in VC."
     },
     {

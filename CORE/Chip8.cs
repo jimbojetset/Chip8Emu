@@ -349,7 +349,7 @@ namespace Chip8Emu
             if (opHex[0] == 'F' && opHex[2] == '3' && opHex[3] == '3') { OP_Fx33(opcode); return; }
             if (opHex[0] == 'F' && opHex[2] == '5' && opHex[3] == '5') { OP_Fx55(opcode); return; }
             if (opHex[0] == 'F' && opHex[2] == '6' && opHex[3] == '5') { OP_Fx65(opcode); return; }
-            throw new Exception("Invalid Opcode");
+            throw new Exception("Invalid Opcode - " + opHex + " at PC: " + (PC - 2).ToString("X"));
         }
 
         private void UpdateTimers()
