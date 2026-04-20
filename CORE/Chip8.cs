@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Chip8Emu
@@ -125,7 +125,6 @@ namespace Chip8Emu
         private const uint START_ADDRESS = 0x200;
         private const int FONTSET_SIZE = 80;
         private bool playingSound;
-        private string CurrentOpcodeDescription = String.Empty;
         private readonly uint[] STACK = new uint[16];
         private readonly Random _random = new();
         private readonly Stopwatch _frameStopwatch = new();
@@ -324,7 +323,6 @@ namespace Chip8Emu
         private void CallOpcode(uint opcode)
         {
             string opHex = opcode.ToString("X4");
-            CurrentOpcodeDescription = opHex + "  ";
             if (opHex[0] == '0' && opHex != "00E0" && opHex != "00EE") { OP_0nnn(opcode); return; }
             if (opHex == "00E0") { OP_00E0(opcode); return; }
             if (opHex == "00EE") { OP_00EE(opcode); return; }
@@ -391,7 +389,6 @@ namespace Chip8Emu
         private void OP_00E0(uint opcode)
         {
             video = new FIXED_BYTE_ARRAY { @byte = new byte[VIDEO_WIDTH * VIDEO_HEIGHT] };
-            CurrentOpcodeDescription += " -  CLS";
         }
 
         private void OP_00EE(uint opcode)
@@ -402,20 +399,16 @@ namespace Chip8Emu
             SP--;
             PC = STACK[SP];
             STACK[SP] = 0x00;
-            CurrentOpcodeDescription += " -  RET";
         }
 
         private void OP_0nnn(uint opcode)
         {
-            uint address = opcode & 0x0FFF;
-            CurrentOpcodeDescription += " -  SYS   #" + address.ToString("X") + " (ignored)";
         }
 
         private void OP_1nnn(uint opcode)
         {
             uint address = (opcode & 0x0FFF);
             PC = address;
-            CurrentOpcodeDescription += " -  JMP   PC #" + PC.ToString("X");
         }
 
         private void OP_2nnn(uint opcode)
@@ -427,7 +420,6 @@ namespace Chip8Emu
             STACK[SP] = PC;
             SP++;
             PC = address;
-            CurrentOpcodeDescription += " -  CALL  PC #" + PC.ToString("X");
         }
 
         private void OP_3xnn(uint opcode)
@@ -436,7 +428,6 @@ namespace Chip8Emu
             uint b = opcode & 0x00FF;
             if (registers.@byte![Vx] == b)
                 PC += 2;
-            CurrentOpcodeDescription += " -  SE    V" + Vx.ToString("X") + ", #" + b.ToString("X");
         }
 
         private void OP_4xnn(uint opcode)
@@ -445,7 +436,6 @@ namespace Chip8Emu
             uint b = opcode & 0x00FF;
             if (registers.@byte![Vx] != b)
                 PC += 2;
-            CurrentOpcodeDescription += " -  SNE   V" + Vx.ToString("X") + ", #" + b.ToString("X");
         }
 
         private void OP_5xy0(uint opcode)
@@ -454,7 +444,6 @@ namespace Chip8Emu
             uint Vy = (opcode & 0x00F0) >> 4;
             if (registers.@byte![Vx] == registers.@byte![Vy])
                 PC += 2;
-            CurrentOpcodeDescription += " -  SE    V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
         }
 
         private void OP_6xnn(uint opcode)
@@ -462,7 +451,6 @@ namespace Chip8Emu
             uint Vx = (opcode & 0x0F00) >> 8;
             uint b = opcode & 0x00FF;
             registers.@byte![Vx] = (byte)b;
-            CurrentOpcodeDescription += " -  LD    V" + Vx.ToString("X") + ", #" + b.ToString("X");
         }
 
         private void OP_7xnn(uint opcode)
@@ -470,7 +458,6 @@ namespace Chip8Emu
             uint Vx = (opcode & 0x0F00) >> 8;
             uint b = opcode & 0x00FF;
             registers.@byte![Vx] = (byte)((registers.@byte![Vx] + (byte)b) & 0xFF);
-            CurrentOpcodeDescription += " -  ADD   V" + Vx.ToString("X") + ", #" + b.ToString("X");
         }
 
         private void OP_8xy0(uint opcode)
@@ -478,7 +465,6 @@ namespace Chip8Emu
             uint Vx = (opcode & 0x0F00) >> 8;
             uint Vy = (opcode & 0x00F0) >> 4;
             registers.@byte![Vx] = registers.@byte![Vy];
-            CurrentOpcodeDescription += " -  LD    V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
         }
 
         private void OP_8xy1(uint opcode)
@@ -488,7 +474,6 @@ namespace Chip8Emu
             registers.@byte![Vx] |= registers.@byte![Vy];
             if (vFResetQuirk)
                 registers.@byte![15] = 0;
-            CurrentOpcodeDescription += " -  OR    V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
         }
 
         private void OP_8xy2(uint opcode)
@@ -498,7 +483,6 @@ namespace Chip8Emu
             registers.@byte![Vx] &= registers.@byte![Vy];
             if (vFResetQuirk)
                 registers.@byte![15] = 0;
-            CurrentOpcodeDescription += " -  AND   V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
         }
 
         private void OP_8xy3(uint opcode)
@@ -508,7 +492,6 @@ namespace Chip8Emu
             registers.@byte![Vx] ^= registers.@byte![Vy];
             if (vFResetQuirk)
                 registers.@byte![15] = 0;
-            CurrentOpcodeDescription += " -  XOR   V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
         }
 
         private void OP_8xy4(uint opcode)
@@ -520,7 +503,6 @@ namespace Chip8Emu
                 carry = 1;
             registers.@byte![Vx] += registers.@byte![Vy];
             registers.@byte![15] = (byte)carry;
-            CurrentOpcodeDescription += " -  ADD   V" + Vx.ToString("X") + ", V" + Vy.ToString("X") + ", VF";
         }
 
         private void OP_8xy5(uint opcode)
@@ -532,7 +514,6 @@ namespace Chip8Emu
                 carry = 1;
             registers.@byte![Vx] -= registers.@byte![Vy];
             registers.@byte![15] = (byte)carry;
-            CurrentOpcodeDescription += " -  SUB   V" + Vx.ToString("X") + ", V" + Vy.ToString("X") + ", VF";
         }
 
         private void OP_8xy6(uint opcode)
@@ -542,7 +523,6 @@ namespace Chip8Emu
             byte source = shiftQuirk ? registers.@byte![Vx] : registers.@byte![Vy];
             registers.@byte![Vx] = (byte)(source >> 1);
             registers.@byte![15] = (byte)(source & 0x1);
-            CurrentOpcodeDescription += " -  SHR   V" + Vx.ToString("X") + ", V" + Vy.ToString("X") + ", VF";
         }
 
         private void OP_8xy7(uint opcode)
@@ -554,7 +534,6 @@ namespace Chip8Emu
                 carry = 1;
             registers.@byte![Vx] = (byte)(registers.@byte![Vy] - registers.@byte![Vx]);
             registers.@byte![15] = (byte)carry;
-            CurrentOpcodeDescription += " -  SUBN  V" + Vx.ToString("X") + ", V" + Vy.ToString("X") + ", VF";
         }
 
         private void OP_8xyE(uint opcode)
@@ -564,7 +543,6 @@ namespace Chip8Emu
             byte source = shiftQuirk ? registers.@byte![Vx] : registers.@byte![Vy];
             registers.@byte![Vx] = (byte)(source << 1);
             registers.@byte![15] = (byte)((source & 0x80) >> 7);
-            CurrentOpcodeDescription += " -  SHL   V" + Vx.ToString("X") + ", V" + Vy.ToString("X") + ", VF";
         }
 
         private void OP_9xy0(uint opcode)
@@ -573,14 +551,12 @@ namespace Chip8Emu
             uint Vy = (opcode & 0x00F0) >> 4;
             if (registers.@byte![Vx] != registers.@byte![Vy])
                 PC += 2;
-            CurrentOpcodeDescription += " -  SNE   V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
         }
 
         private void OP_Annn(uint opcode)
         {
             uint address = (opcode & 0x0FFF);
             I = (ushort)address;
-            CurrentOpcodeDescription += " -  LD    I #" + I.ToString("X");
         }
 
         private void OP_Bnnn(uint opcode)
@@ -591,7 +567,6 @@ namespace Chip8Emu
                 PC = address + registers.@byte![0];
             else
                 PC = address + registers.@byte![Vx];
-            CurrentOpcodeDescription += " -  JMP   #" + PC.ToString("X");
         }
 
         private void OP_Cxnn(uint opcode)
@@ -600,7 +575,6 @@ namespace Chip8Emu
             uint b = opcode & 0x00FF;
             int r = _random.Next(0, 256);
             registers.@byte![Vx] = (byte)(r & b);
-            CurrentOpcodeDescription += " -  RND   V" + Vx.ToString("X") + ", #" + registers.@byte![Vx].ToString("X");
         }
 
         private void OP_Dxyn(uint opcode)
@@ -638,7 +612,6 @@ namespace Chip8Emu
             }
             // Display wait quirk: signal to wait for next VBlank
             waitingForVBlank = true;
-            CurrentOpcodeDescription += " -  DRW   V" + Vx.ToString("X") + ", V" + Vy.ToString("X") + ", " + height;
         }
 
         private void OP_Ex9E(uint opcode)
@@ -650,7 +623,6 @@ namespace Chip8Emu
 
             if (keypad.@byte![key] == 1)
                 PC += 2;
-            CurrentOpcodeDescription += " -  SKP   V" + Vx.ToString("X");
         }
 
         private void OP_ExA1(uint opcode)
@@ -662,14 +634,12 @@ namespace Chip8Emu
 
             if (keypad.@byte![key] == 0)
                 PC += 2;
-            CurrentOpcodeDescription += " -  SKNP  V" + Vx.ToString("X");
         }
 
         private void OP_Fx07(uint opcode)
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             registers.@byte![Vx] = DT;
-            CurrentOpcodeDescription += " -  LD    V" + Vx.ToString("X") + ", DT" + DT;
         }
 
         private void OP_Fx0A(uint opcode)
@@ -722,28 +692,24 @@ namespace Chip8Emu
                 if (!keyPressed)
                     PC -= 2;
             }
-            CurrentOpcodeDescription += " -  LD    V" + Vx.ToString("X") + ", K";
         }
 
         private void OP_Fx15(uint opcode)
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             DT = registers.@byte![Vx];
-            CurrentOpcodeDescription += " -  LD    DT" + DT + ", V" + Vx.ToString("X");
         }
 
         private void OP_Fx18(uint opcode)
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             ST = registers.@byte![Vx];
-            CurrentOpcodeDescription += " -  LD    ST" + ST + ", V" + Vx.ToString("X");
         }
 
         private void OP_Fx1E(uint opcode)
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             I = (I + registers.@byte![Vx]) & 0xFFFF;
-            CurrentOpcodeDescription += " -  ADD   I, V" + Vx.ToString("X");
         }
 
         private void OP_Fx29(uint opcode)
@@ -751,7 +717,6 @@ namespace Chip8Emu
             uint Vx = (opcode & 0x0F00) >> 8;
             uint digit = registers.@byte![Vx];
             I = (digit * 0x05) & 0xFFFF;
-            CurrentOpcodeDescription += " -  LD    F, V" + Vx.ToString("X");
         }
 
         private void OP_Fx33(uint opcode)
@@ -764,31 +729,26 @@ namespace Chip8Emu
             memory.@byte![I] = (byte)h;
             memory.@byte![I + 1] = (byte)t;
             memory.@byte![I + 2] = (byte)u;
-            CurrentOpcodeDescription += " -  BCD   V" + Vx.ToString("X") + ", " + h + " " + t + " " + u;
         }
 
         private void OP_Fx55(uint opcode)
         {
             uint Vx = (opcode & 0x0F00) >> 8;
-            uint ii = I;
             for (uint i = 0; i <= Vx; i++)
                 memory.@byte![I + i] = registers.@byte![i];
             // Original COSMAC VIP increments I; memoryQuirk disables this for modern ROMs
             if (!memoryQuirk)
                 I = (I + Vx + 1) & 0xFFFF;
-            CurrentOpcodeDescription += " -  LD    [I], V0-V" + Vx.ToString("X");
         }
 
         private void OP_Fx65(uint opcode)
         {
             uint Vx = (opcode & 0x0F00) >> 8;
-            uint ii = I;
             for (uint i = 0; i <= Vx; i++)
                 registers.@byte![i] = memory.@byte![I + i];
             // Original COSMAC VIP increments I; memoryQuirk disables this for modern ROMs
             if (!memoryQuirk)
                 I = (I + Vx + 1) & 0xFFFF;
-            CurrentOpcodeDescription += " -  LD    V0-V" + Vx.ToString("X") + ", [I]";
         }
     }
 }
