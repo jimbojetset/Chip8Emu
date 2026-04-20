@@ -198,8 +198,8 @@ namespace Chip8Emu
                     // Draw settings window
                     _settingsWindow?.Draw();
 
-                    // Update window title with running status
-                    _window.UpdateTitle(_chip8.Running);
+                    // Show current ROM title in the window title
+                    _window.SetRomTitle(_settingsWindow?.CurrentRomTitle);
 
                     // Always render (ImGui needs continuous updates)
                     _videoBuffer = _chip8.GetVideoBuffer();

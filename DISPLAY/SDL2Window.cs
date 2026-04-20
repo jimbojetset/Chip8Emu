@@ -7,6 +7,7 @@ namespace Chip8Emu
 {
     public class SDL2Window : IDisposable
     {
+        private const string BaseWindowTitle = "Chip8 Emulator";
         private const int CHIP8_WIDTH = 64;
         private const int CHIP8_HEIGHT = 32;
         private const int SCALE = 15;
@@ -22,6 +23,7 @@ namespace Chip8Emu
         private uint _quadShader;
         private int _texUniformLoc;
         private bool _disposed = false;
+        private string? _lastWindowTitle;
 
         private ImGuiController? _imguiController;
 
@@ -50,7 +52,7 @@ namespace Chip8Emu
             SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_DEPTH_SIZE, 24);
 
             _window = SDL_CreateWindow(
-                "Chip8 Emulator",
+                BaseWindowTitle,
                 SDL_WINDOWPOS_CENTERED,
                 SDL_WINDOWPOS_CENTERED,
                 WINDOW_WIDTH,
@@ -313,10 +315,17 @@ namespace Chip8Emu
             return _chip8Texture;
         }
 
-        public void UpdateTitle(bool isRunning)
+        public void SetRomTitle(string? romTitle)
         {
-            string status = isRunning ? "Running" : "Stopped";
-            SDL_SetWindowTitle(_window, $"Chip8 Emulator - {status}");
+            string title = string.IsNullOrWhiteSpace(romTitle)
+                ? BaseWindowTitle
+                : $"{BaseWindowTitle} - {romTitle}";
+
+            if (string.Equals(_lastWindowTitle, title, StringComparison.Ordinal))
+                return;
+
+            SDL_SetWindowTitle(_window, title);
+            _lastWindowTitle = title;
         }
 
         public void Dispose()

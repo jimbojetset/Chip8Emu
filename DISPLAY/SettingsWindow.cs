@@ -54,6 +54,8 @@ namespace Chip8Emu
             set => _isVisible = value;
         }
 
+        public string CurrentRomTitle => _currentRomName;
+
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
             WriteIndented = true
@@ -74,7 +76,11 @@ namespace Chip8Emu
 
         public void SetCurrentRom(string romPath)
         {
-            _currentRomName = Path.GetFileName(romPath);
+            string romFileName = Path.GetFileName(romPath);
+            RomEntry? match = _romEntries.FirstOrDefault(e =>
+                string.Equals(e.File, romFileName, StringComparison.OrdinalIgnoreCase));
+
+            _currentRomName = match?.Title ?? romFileName;
         }
 
         private void SyncFromChip8()
@@ -255,9 +261,6 @@ namespace Chip8Emu
 
         private void DrawRomSection()
         {
-            // Current ROM display
-            ImGui.TextColored(new Vector4(0.5f, 1f, 0.5f, 1f), _currentRomName.Length > 0 ? _currentRomName : "No ROM loaded");
-
             if (ImGui.Button("Refresh"))
             {
                 SynchronizeRomMetadata();
@@ -266,7 +269,7 @@ namespace Chip8Emu
             ImGui.TextDisabled($"({_romEntries.Length})");
 
             // Scrollable list box - use remaining height
-            float listHeight = ImGui.GetContentRegionAvail().Y - 25;
+            float listHeight = ImGui.GetContentRegionAvail().Y - ImGui.GetFrameHeightWithSpacing();
             if (ImGui.BeginListBox("##RomList", new Vector2(-1, listHeight)))
             {
                 if (_romEntries.Length == 0)
