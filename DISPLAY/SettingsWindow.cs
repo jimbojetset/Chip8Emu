@@ -11,7 +11,8 @@ namespace Chip8Emu
         [property: JsonPropertyName("VFReset")] bool? VFReset,
         [property: JsonPropertyName("MemoryQuirk")] bool? MemoryQuirk,
         [property: JsonPropertyName("ClippingQuirk")] bool? ClippingQuirk,
-        [property: JsonPropertyName("DisplayWaitQuirk")] bool? DisplayWaitQuirk
+        [property: JsonPropertyName("DisplayWaitQuirk")] bool? DisplayWaitQuirk,
+        [property: JsonPropertyName("KeyReleaseWaitQuirk")] bool? KeyReleaseWaitQuirk
     );
 
     internal record RomEntry(
@@ -44,6 +45,7 @@ namespace Chip8Emu
         private bool _memoryQuirk;
         private bool _clippingQuirk;
         private bool _displayWaitQuirk;
+        private bool _keyReleaseWaitQuirk;
 
         private bool _isVisible = true;
         public bool IsVisible
@@ -78,6 +80,7 @@ namespace Chip8Emu
             _memoryQuirk = _chip8.MemoryQuirk;
             _clippingQuirk = _chip8.ClippingQuirk;
             _displayWaitQuirk = _chip8.DisplayWaitQuirk;
+            _keyReleaseWaitQuirk = _chip8.KeyReleaseWaitQuirk;
         }
 
         private void SyncToChip8()
@@ -88,6 +91,7 @@ namespace Chip8Emu
             _chip8.MemoryQuirk = _memoryQuirk;
             _chip8.ClippingQuirk = _clippingQuirk;
             _chip8.DisplayWaitQuirk = _displayWaitQuirk;
+            _chip8.KeyReleaseWaitQuirk = _keyReleaseWaitQuirk;
         }
 
         private void RefreshRomList()
@@ -261,6 +265,7 @@ namespace Chip8Emu
                     if (entry.Quirks.MemoryQuirk.HasValue) _memoryQuirk = entry.Quirks.MemoryQuirk.Value;
                     if (entry.Quirks.ClippingQuirk.HasValue) _clippingQuirk = entry.Quirks.ClippingQuirk.Value;
                     if (entry.Quirks.DisplayWaitQuirk.HasValue) _displayWaitQuirk = entry.Quirks.DisplayWaitQuirk.Value;
+                    if (entry.Quirks.KeyReleaseWaitQuirk.HasValue) _keyReleaseWaitQuirk = entry.Quirks.KeyReleaseWaitQuirk.Value;
                 }
                 else
                 {
@@ -271,6 +276,7 @@ namespace Chip8Emu
                     _memoryQuirk = false;
                     _clippingQuirk = false;
                     _displayWaitQuirk = true;
+                    _keyReleaseWaitQuirk = true;
                 }
 
                 SyncToChip8();
@@ -303,6 +309,9 @@ namespace Chip8Emu
             changed |= ImGui.Checkbox("Display Wait", ref _displayWaitQuirk);
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Wait for VBlank after draw (VIP)");
 
+            changed |= ImGui.Checkbox("Key Wait Release", ref _keyReleaseWaitQuirk);
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("FX0A waits for key press and release instead of press only (VIP)");
+
             if (changed) SyncToChip8();
 
             ImGui.Spacing();
@@ -314,6 +323,7 @@ namespace Chip8Emu
             {
                 _shiftQuirk = false; _jumpQuirk = false; _vfReset = true;
                 _memoryQuirk = false; _clippingQuirk = false; _displayWaitQuirk = true;
+                _keyReleaseWaitQuirk = true;
                 SyncToChip8();
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("COSMAC VIP settings");
@@ -323,6 +333,7 @@ namespace Chip8Emu
             {
                 _shiftQuirk = true; _jumpQuirk = true; _vfReset = false;
                 _memoryQuirk = true; _clippingQuirk = false; _displayWaitQuirk = false;
+                _keyReleaseWaitQuirk = false;
                 SyncToChip8();
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("SUPER-CHIP settings");
@@ -332,6 +343,7 @@ namespace Chip8Emu
             {
                 _shiftQuirk = false; _jumpQuirk = false; _vfReset = false;
                 _memoryQuirk = false; _clippingQuirk = false; _displayWaitQuirk = false;
+                _keyReleaseWaitQuirk = false;
                 SyncToChip8();
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("All quirks off");

@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Chip8Emu
 {
@@ -53,6 +54,13 @@ namespace Chip8Emu
             set { displayWaitQuirk = value; }
         }
 
+        private bool keyReleaseWaitQuirk = true;
+        public bool KeyReleaseWaitQuirk
+        {
+            get { return keyReleaseWaitQuirk; }
+            set { keyReleaseWaitQuirk = value; }
+        }
+
         private bool waitingForVBlank = false;
 
         private int frameSize = 10;
@@ -90,12 +98,20 @@ namespace Chip8Emu
 
         public uint KeyDown
         {
-            set { keypad.@byte![value] = 1; }
+            set
+            {
+                if (value < keypad.@byte!.Length)
+                    keypad.@byte![value] = 1;
+            }
         }
 
         public uint KeyUp
         {
-            set { keypad.@byte![value] = 0; }
+            set
+            {
+                if (value < keypad.@byte!.Length)
+                    keypad.@byte![value] = 0;
+            }
         }
 
         private uint I;
@@ -104,13 +120,15 @@ namespace Chip8Emu
         private byte ST = 0;// sound timer
         private byte DT = 0;// delay timer
         private readonly FIXED_BYTE_ARRAY registers = new() { @byte = new byte[16] };
-        private readonly FIXED_BYTE_ARRAY memory = new() { @byte = new byte[4095] };
+        private readonly FIXED_BYTE_ARRAY memory = new() { @byte = new byte[4096] };
         private readonly FIXED_BYTE_ARRAY keypad = new() { @byte = new byte[16] };
         private const uint START_ADDRESS = 0x200;
         private const int FONTSET_SIZE = 80;
         private bool playingSound;
         private string CurrentOpcodeDescription = String.Empty;
         private readonly uint[] STACK = new uint[16];
+        private readonly Random _random = new();
+        private readonly Stopwatch _frameStopwatch = new();
 
         // FX0A key wait state (original VIP waits for press AND release)
         private bool _waitingForKeyRelease = false;
@@ -126,21 +144,21 @@ namespace Chip8Emu
         private readonly byte[] FONTS =
         [
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
-	        0x20, 0x60, 0x20, 0x20, 0x70, // 1
-	        0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
-	        0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-	        0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-	        0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-	        0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-	        0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-	        0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-	        0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
-	        0xF0, 0x90, 0xF0, 0x90, 0x90, // A
-	        0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-	        0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-	        0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-	        0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-	        0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+            0x20, 0x60, 0x20, 0x20, 0x70, // 1
+            0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+            0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+            0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+            0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+            0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+            0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+            0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+            0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+            0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+            0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+            0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+            0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+            0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+            0xF0, 0x80, 0xF0, 0x80, 0x80  // F
         ];
 
         public Chip8()
@@ -245,15 +263,13 @@ namespace Chip8Emu
         private void RunEmulator()
         {
             running = true;
-            int beat = 0;
-
-            uint p = PC;
+            _frameStopwatch.Restart();
 
             // Main run loop
             while (running)
             {
-                var currentTime = (DateTime.Now - DateTime.MinValue).TotalMilliseconds;
-                var frameTimer = currentTime;
+                double frameTimer = _frameStopwatch.Elapsed.TotalMilliseconds;
+                double currentTime = frameTimer;
 
                 // Clear VBlank wait at start of each frame
                 waitingForVBlank = false;
@@ -268,19 +284,13 @@ namespace Chip8Emu
                         if (displayWaitQuirk && waitingForVBlank)
                             break;
 
+                        if (PC >= memory.@byte!.Length - 1)
+                            throw new Exception($"Program counter out of range: 0x{PC:X}");
+
                         uint opcode = ((uint)memory.@byte![PC] << 8) | memory.@byte![PC + 1];
-                        p = PC;
 
                         // Execute current instruction
                         ExecuteOpcode(opcode);
-
-                        beat++;
-                        string op = opcode.ToString("X4");
-                        bool awaitKey = (op[0] == 'F' && op[2] == '0' && op[3] == 'A');
-                        if (p != PC || awaitKey)
-                            beat = 0;
-                        if (beat == 10)
-                            running = false;
                     }
 
                     // Display wait quirk: wait for remaining frame time then break 
@@ -292,7 +302,7 @@ namespace Chip8Emu
                         break;
                     }
 
-                    currentTime = (DateTime.Now - DateTime.MinValue).TotalMilliseconds;
+                    currentTime = _frameStopwatch.Elapsed.TotalMilliseconds;
                 }
                 UpdateTimers();
                 UpdateDisplay();
@@ -315,6 +325,7 @@ namespace Chip8Emu
         {
             string opHex = opcode.ToString("X4");
             CurrentOpcodeDescription = opHex + "  ";
+            if (opHex[0] == '0' && opHex != "00E0" && opHex != "00EE") { OP_0nnn(opcode); return; }
             if (opHex == "00E0") { OP_00E0(opcode); return; }
             if (opHex == "00EE") { OP_00EE(opcode); return; }
             if (opHex[0] == '1') { OP_1nnn(opcode); return; }
@@ -385,10 +396,19 @@ namespace Chip8Emu
 
         private void OP_00EE(uint opcode)
         {
+            if (SP == 0)
+                throw new Exception("Stack underflow on RET");
+
             SP--;
             PC = STACK[SP];
             STACK[SP] = 0x00;
             CurrentOpcodeDescription += " -  RET";
+        }
+
+        private void OP_0nnn(uint opcode)
+        {
+            uint address = opcode & 0x0FFF;
+            CurrentOpcodeDescription += " -  SYS   #" + address.ToString("X") + " (ignored)";
         }
 
         private void OP_1nnn(uint opcode)
@@ -400,6 +420,9 @@ namespace Chip8Emu
 
         private void OP_2nnn(uint opcode)
         {
+            if (SP >= STACK.Length)
+                throw new Exception("Stack overflow on CALL");
+
             uint address = (opcode & 0x0FFF);
             STACK[SP] = PC;
             SP++;
@@ -413,7 +436,7 @@ namespace Chip8Emu
             uint b = opcode & 0x00FF;
             if (registers.@byte![Vx] == b)
                 PC += 2;
-            CurrentOpcodeDescription += " -  SNI   V" + Vx.ToString("X") + ", #" + b.ToString("X");
+            CurrentOpcodeDescription += " -  SE    V" + Vx.ToString("X") + ", #" + b.ToString("X");
         }
 
         private void OP_4xnn(uint opcode)
@@ -422,7 +445,7 @@ namespace Chip8Emu
             uint b = opcode & 0x00FF;
             if (registers.@byte![Vx] != b)
                 PC += 2;
-            CurrentOpcodeDescription += " -  SNI   V" + Vx.ToString("X") + ", #" + b.ToString("X");
+            CurrentOpcodeDescription += " -  SNE   V" + Vx.ToString("X") + ", #" + b.ToString("X");
         }
 
         private void OP_5xy0(uint opcode)
@@ -431,7 +454,7 @@ namespace Chip8Emu
             uint Vy = (opcode & 0x00F0) >> 4;
             if (registers.@byte![Vx] == registers.@byte![Vy])
                 PC += 2;
-            CurrentOpcodeDescription += " -  SNI   V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
+            CurrentOpcodeDescription += " -  SE    V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
         }
 
         private void OP_6xnn(uint opcode)
@@ -447,7 +470,7 @@ namespace Chip8Emu
             uint Vx = (opcode & 0x0F00) >> 8;
             uint b = opcode & 0x00FF;
             registers.@byte![Vx] = (byte)((registers.@byte![Vx] + (byte)b) & 0xFF);
-            CurrentOpcodeDescription += " -  LD    V" + Vx.ToString("X") + ", #" + b.ToString("X");
+            CurrentOpcodeDescription += " -  ADD   V" + Vx.ToString("X") + ", #" + b.ToString("X");
         }
 
         private void OP_8xy0(uint opcode)
@@ -516,12 +539,9 @@ namespace Chip8Emu
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             uint Vy = (opcode & 0x00F0) >> 4;
-            uint vx = registers.@byte![Vx];
-            registers.@byte![Vx] = registers.@byte![Vy];
-            if (shiftQuirk)
-                registers.@byte![Vx] = (byte)vx;
-            registers.@byte![Vx] >>= 0x1;
-            registers.@byte![15] = (byte)(vx & 0x1);
+            byte source = shiftQuirk ? registers.@byte![Vx] : registers.@byte![Vy];
+            registers.@byte![Vx] = (byte)(source >> 1);
+            registers.@byte![15] = (byte)(source & 0x1);
             CurrentOpcodeDescription += " -  SHR   V" + Vx.ToString("X") + ", V" + Vy.ToString("X") + ", VF";
         }
 
@@ -529,7 +549,6 @@ namespace Chip8Emu
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             uint Vy = (opcode & 0x00F0) >> 4;
-            uint sum = (uint)(registers.@byte![Vy] - registers.@byte![Vx]);
             uint carry = 0;
             if (registers.@byte![Vy] >= registers.@byte![Vx])
                 carry = 1;
@@ -542,12 +561,9 @@ namespace Chip8Emu
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             uint Vy = (opcode & 0x00F0) >> 4;
-            uint vx = registers.@byte![Vx];
-            registers.@byte![Vx] = registers.@byte![Vy];
-            if (shiftQuirk)
-                registers.@byte![Vx] = (byte)vx;
-            registers.@byte![Vx] <<= 0x1;
-            registers.@byte![15] = (byte)((vx & 0x80) >> 7);
+            byte source = shiftQuirk ? registers.@byte![Vx] : registers.@byte![Vy];
+            registers.@byte![Vx] = (byte)(source << 1);
+            registers.@byte![15] = (byte)((source & 0x80) >> 7);
             CurrentOpcodeDescription += " -  SHL   V" + Vx.ToString("X") + ", V" + Vy.ToString("X") + ", VF";
         }
 
@@ -557,7 +573,7 @@ namespace Chip8Emu
             uint Vy = (opcode & 0x00F0) >> 4;
             if (registers.@byte![Vx] != registers.@byte![Vy])
                 PC += 2;
-            CurrentOpcodeDescription += " -  SHR   V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
+            CurrentOpcodeDescription += " -  SNE   V" + Vx.ToString("X") + ", V" + Vy.ToString("X");
         }
 
         private void OP_Annn(uint opcode)
@@ -582,7 +598,7 @@ namespace Chip8Emu
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             uint b = opcode & 0x00FF;
-            int r = new Random(DateTime.Now.Millisecond).Next(0, 255);
+            int r = _random.Next(0, 256);
             registers.@byte![Vx] = (byte)(r & b);
             CurrentOpcodeDescription += " -  RND   V" + Vx.ToString("X") + ", #" + registers.@byte![Vx].ToString("X");
         }
@@ -629,6 +645,9 @@ namespace Chip8Emu
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             uint key = registers.@byte![Vx];
+            if (key >= keypad.@byte!.Length)
+                throw new Exception($"Invalid keypad index in SKP: 0x{key:X}");
+
             if (keypad.@byte![key] == 1)
                 PC += 2;
             CurrentOpcodeDescription += " -  SKP   V" + Vx.ToString("X");
@@ -638,9 +657,12 @@ namespace Chip8Emu
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             uint key = registers.@byte![Vx];
+            if (key >= keypad.@byte!.Length)
+                throw new Exception($"Invalid keypad index in SKNP: 0x{key:X}");
+
             if (keypad.@byte![key] == 0)
                 PC += 2;
-            CurrentOpcodeDescription += " -  SKP   V" + Vx.ToString("X");
+            CurrentOpcodeDescription += " -  SKNP  V" + Vx.ToString("X");
         }
 
         private void OP_Fx07(uint opcode)
@@ -654,37 +676,51 @@ namespace Chip8Emu
         {
             uint Vx = (opcode & 0x0F00) >> 8;
 
-            // Original COSMAC VIP behavior: wait for key press AND release
-            if (_waitingForKeyRelease)
+            if (keyReleaseWaitQuirk)
             {
-                // We already detected a key press, now wait for it to be released
-                if (keypad.@byte![_pressedKey] == 0)
+                // Original COSMAC VIP behavior: wait for key press AND release
+                if (_waitingForKeyRelease)
                 {
-                    // Key was released, store the key and continue
-                    registers.@byte![Vx] = (byte)_pressedKey;
-                    _waitingForKeyRelease = false;
-                    _pressedKey = -1;
+                    if (keypad.@byte![_pressedKey] == 0)
+                    {
+                        registers.@byte![Vx] = (byte)_pressedKey;
+                        _waitingForKeyRelease = false;
+                        _pressedKey = -1;
+                    }
+                    else
+                    {
+                        PC -= 2;
+                    }
                 }
                 else
                 {
-                    // Still waiting for release, repeat this instruction
+                    for (int i = 0; i < 16; i++)
+                    {
+                        if (keypad.@byte![i] != 0)
+                        {
+                            _pressedKey = i;
+                            _waitingForKeyRelease = true;
+                            break;
+                        }
+                    }
                     PC -= 2;
                 }
             }
             else
             {
-                // Look for any key press
+                bool keyPressed = false;
                 for (int i = 0; i < 16; i++)
                 {
                     if (keypad.@byte![i] != 0)
                     {
-                        _pressedKey = i;
-                        _waitingForKeyRelease = true;
+                        registers.@byte![Vx] = (byte)i;
+                        keyPressed = true;
                         break;
                     }
                 }
-                // Keep repeating until a key is pressed
-                PC -= 2;
+
+                if (!keyPressed)
+                    PC -= 2;
             }
             CurrentOpcodeDescription += " -  LD    V" + Vx.ToString("X") + ", K";
         }
@@ -700,14 +736,14 @@ namespace Chip8Emu
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             ST = registers.@byte![Vx];
-            CurrentOpcodeDescription += " -  LD    ST" + DT + ", V" + Vx.ToString("X");
+            CurrentOpcodeDescription += " -  LD    ST" + ST + ", V" + Vx.ToString("X");
         }
 
         private void OP_Fx1E(uint opcode)
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             I = (I + registers.@byte![Vx]) & 0xFFFF;
-            CurrentOpcodeDescription += " -  ADD   V" + Vx.ToString("X") + ", [I]";
+            CurrentOpcodeDescription += " -  ADD   I, V" + Vx.ToString("X");
         }
 
         private void OP_Fx29(uint opcode)
@@ -715,7 +751,7 @@ namespace Chip8Emu
             uint Vx = (opcode & 0x0F00) >> 8;
             uint digit = registers.@byte![Vx];
             I = (digit * 0x05) & 0xFFFF;
-            CurrentOpcodeDescription += " -  LD    [I], V" + Vx.ToString("X");
+            CurrentOpcodeDescription += " -  LD    F, V" + Vx.ToString("X");
         }
 
         private void OP_Fx33(uint opcode)
@@ -740,7 +776,7 @@ namespace Chip8Emu
             // Original COSMAC VIP increments I; memoryQuirk disables this for modern ROMs
             if (!memoryQuirk)
                 I = (I + Vx + 1) & 0xFFFF;
-            CurrentOpcodeDescription += " -  LD    #" + ii + "+, V0-F";
+            CurrentOpcodeDescription += " -  LD    [I], V0-V" + Vx.ToString("X");
         }
 
         private void OP_Fx65(uint opcode)
@@ -752,7 +788,7 @@ namespace Chip8Emu
             // Original COSMAC VIP increments I; memoryQuirk disables this for modern ROMs
             if (!memoryQuirk)
                 I = (I + Vx + 1) & 0xFFFF;
-            CurrentOpcodeDescription += " -  LD    V0-F, #" + ii + "+";
+            CurrentOpcodeDescription += " -  LD    V0-V" + Vx.ToString("X") + ", [I]";
         }
     }
 }
