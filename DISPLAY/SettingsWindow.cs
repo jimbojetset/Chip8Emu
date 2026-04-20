@@ -54,6 +54,11 @@ namespace Chip8Emu
             set => _isVisible = value;
         }
 
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            WriteIndented = true
+        };
+
         public SettingsWindow(Chip8 chip8, Action<string> loadRomCallback, bool startCollapsed = UiLayoutDefaults.SettingsWindowStartsCollapsed)
         {
             _chip8 = chip8;
@@ -135,6 +140,74 @@ namespace Chip8Emu
             }
         }
 
+        private void SynchronizeRomMetadata()
+        {
+            if (!Directory.Exists(_romsDirectory))
+            {
+                _romEntries = Array.Empty<RomEntry>();
+                return;
+            }
+
+            string jsonPath = Path.Combine(_romsDirectory, "roms.json");
+            RomEntry[] existingEntries = Array.Empty<RomEntry>();
+
+            if (File.Exists(jsonPath))
+            {
+                try
+                {
+                    string json = File.ReadAllText(jsonPath);
+                    existingEntries = JsonSerializer.Deserialize<RomEntry[]>(json) ?? Array.Empty<RomEntry>();
+                }
+                catch
+                {
+                    existingEntries = Array.Empty<RomEntry>();
+                }
+            }
+
+            var romFiles = Directory.GetFiles(_romsDirectory)
+                .Where(f => f.EndsWith(".ch8", StringComparison.OrdinalIgnoreCase) ||
+                            f.EndsWith(".rom", StringComparison.OrdinalIgnoreCase) ||
+                            !Path.HasExtension(f) ||
+                            Path.GetExtension(f).Length <= 4)
+                .Select(Path.GetFileName)
+                .Where(f => !string.IsNullOrEmpty(f))
+                .Cast<string>()
+                .ToList();
+
+            var romFileSet = new HashSet<string>(romFiles, StringComparer.OrdinalIgnoreCase);
+            var synchronizedEntries = existingEntries
+                .Where(e => !string.IsNullOrWhiteSpace(e.File) && romFileSet.Contains(e.File))
+                .ToList();
+
+            var existingFileSet = new HashSet<string>(synchronizedEntries.Select(e => e.File), StringComparer.OrdinalIgnoreCase);
+            foreach (string romFile in romFiles)
+            {
+                if (existingFileSet.Contains(romFile))
+                    continue;
+
+                synchronizedEntries.Add(new RomEntry(
+                    romFile,
+                    romFile,
+                    romFile,
+                    new RomQuirks(
+                        ShiftQuirk: false,
+                        JumpQuirk: false,
+                        VFReset: true,
+                        MemoryQuirk: false,
+                        ClippingQuirk: false,
+                        DisplayWaitQuirk: true,
+                        KeyReleaseWaitQuirk: true)));
+            }
+
+            string updatedJson = JsonSerializer.Serialize(synchronizedEntries, JsonOptions);
+            File.WriteAllText(jsonPath, updatedJson);
+
+            _romEntries = synchronizedEntries
+                .Where(e => !string.IsNullOrEmpty(e.Title) && !string.IsNullOrEmpty(e.File))
+                .OrderBy(e => e.Title)
+                .ToArray();
+        }
+
         public void Draw()
         {
             if (!IsVisible) return;
@@ -187,7 +260,7 @@ namespace Chip8Emu
 
             if (ImGui.Button("Refresh"))
             {
-                RefreshRomList();
+                SynchronizeRomMetadata();
             }
             ImGui.SameLine();
             ImGui.TextDisabled($"({_romEntries.Length})");
