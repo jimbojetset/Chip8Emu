@@ -1,3 +1,4 @@
+using Chip8Emu.CORE;
 using ImGuiNET;
 using System.Reflection;
 using System.Runtime.InteropServices;

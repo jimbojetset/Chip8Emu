@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace Chip8Emu
+namespace Chip8Emu.CORE
 {
     public class Chip8
     {
@@ -274,7 +274,7 @@ namespace Chip8Emu
                 waitingForVBlank = false;
 
                 //60Hz loop
-                while ((currentTime - frameTimer) < 16.66)
+                while (currentTime - frameTimer < 16.66)
                 {
                     //Frame loop - do a batch of cycles before checking time
                     for (int cycles = 0; cycles < frameSize; cycles++)
@@ -286,7 +286,7 @@ namespace Chip8Emu
                         if (PC >= memory.@byte!.Length - 1)
                             throw new Exception($"Program counter out of range: 0x{PC:X}");
 
-                        uint opcode = ((uint)memory.@byte![PC] << 8) | memory.@byte![PC + 1];
+                        uint opcode = (uint)memory.@byte![PC] << 8 | memory.@byte![PC + 1];
 
                         // Execute current instruction
                         ExecuteOpcode(opcode);
@@ -323,9 +323,9 @@ namespace Chip8Emu
         private void CallOpcode(uint opcode)
         {
             string opHex = opcode.ToString("X4");
-            if (opHex[0] == '0' && opHex != "00E0" && opHex != "00EE") { OP_0nnn(opcode); return; }
-            if (opHex == "00E0") { OP_00E0(opcode); return; }
-            if (opHex == "00EE") { OP_00EE(opcode); return; }
+            if (opHex == "00E0") { OP_00E0(); return; }
+            if (opHex == "00EE") { OP_00EE(); return; }
+            if (opHex[0] == '0') { OP_0nnn(); return; }
             if (opHex[0] == '1') { OP_1nnn(opcode); return; }
             if (opHex[0] == '2') { OP_2nnn(opcode); return; }
             if (opHex[0] == '3') { OP_3xnn(opcode); return; }
@@ -386,28 +386,28 @@ namespace Chip8Emu
             OnDisplayUpdate?.Invoke();
         }
 
-        private void OP_00E0(uint opcode)
+        private void OP_00E0()
         {
             video = new FIXED_BYTE_ARRAY { @byte = new byte[VIDEO_WIDTH * VIDEO_HEIGHT] };
         }
 
-        private void OP_00EE(uint opcode)
+        private void OP_00EE()
         {
             if (SP == 0)
                 throw new Exception("Stack underflow on RET");
-
             SP--;
             PC = STACK[SP];
             STACK[SP] = 0x00;
         }
 
-        private void OP_0nnn(uint opcode)
+        private static void OP_0nnn()
         {
+            //NOP
         }
 
         private void OP_1nnn(uint opcode)
         {
-            uint address = (opcode & 0x0FFF);
+            uint address = opcode & 0x0FFF;
             PC = address;
         }
 
@@ -416,7 +416,7 @@ namespace Chip8Emu
             if (SP >= STACK.Length)
                 throw new Exception("Stack overflow on CALL");
 
-            uint address = (opcode & 0x0FFF);
+            uint address = opcode & 0x0FFF;
             STACK[SP] = PC;
             SP++;
             PC = address;
@@ -457,7 +457,7 @@ namespace Chip8Emu
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             uint b = opcode & 0x00FF;
-            registers.@byte![Vx] = (byte)((registers.@byte![Vx] + (byte)b) & 0xFF);
+            registers.@byte![Vx] = (byte)(registers.@byte![Vx] + (byte)b & 0xFF);
         }
 
         private void OP_8xy0(uint opcode)
@@ -499,7 +499,7 @@ namespace Chip8Emu
             uint Vx = (opcode & 0x0F00) >> 8;
             uint Vy = (opcode & 0x00F0) >> 4;
             uint carry = 0;
-            if (registers.@byte![Vy] > (0xFF - registers.@byte![Vx]))
+            if (registers.@byte![Vy] > 0xFF - registers.@byte![Vx])
                 carry = 1;
             registers.@byte![Vx] += registers.@byte![Vy];
             registers.@byte![15] = (byte)carry;
@@ -555,14 +555,14 @@ namespace Chip8Emu
 
         private void OP_Annn(uint opcode)
         {
-            uint address = (opcode & 0x0FFF);
+            uint address = opcode & 0x0FFF;
             I = (ushort)address;
         }
 
         private void OP_Bnnn(uint opcode)
         {
             uint Vx = (opcode & 0x0F00) >> 8;
-            uint address = (opcode & 0x0FFF);
+            uint address = opcode & 0x0FFF;
             if (!jumpQuirk)
                 PC = address + registers.@byte![0];
             else
@@ -581,7 +581,7 @@ namespace Chip8Emu
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             uint Vy = (opcode & 0x00F0) >> 4;
-            uint height = (opcode & 0x000F);
+            uint height = opcode & 0x000F;
             uint xPos = (uint)registers.@byte![Vx] % VIDEO_WIDTH;
             uint yPos = (uint)registers.@byte![Vy] % VIDEO_HEIGHT;
             registers.@byte![15] = 0;
@@ -599,10 +599,10 @@ namespace Chip8Emu
                         continue;
 
                     uint vp = clippingQuirk
-                        ? (yPos + row) * VIDEO_WIDTH + (xPos + col)
+                        ? (yPos + row) * VIDEO_WIDTH + xPos + col
                         : (yPos + row) % VIDEO_HEIGHT * VIDEO_WIDTH + (xPos + col) % VIDEO_WIDTH;
 
-                    if ((spriteByte & (0x80 >> (int)col)) != 0)
+                    if ((spriteByte & 0x80 >> (int)col) != 0)
                     {
                         if (video.@byte![vp] == 1)
                             registers.@byte![15] = 1;
@@ -709,14 +709,14 @@ namespace Chip8Emu
         private void OP_Fx1E(uint opcode)
         {
             uint Vx = (opcode & 0x0F00) >> 8;
-            I = (I + registers.@byte![Vx]) & 0xFFFF;
+            I = I + registers.@byte![Vx] & 0xFFFF;
         }
 
         private void OP_Fx29(uint opcode)
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             uint digit = registers.@byte![Vx];
-            I = (digit * 0x05) & 0xFFFF;
+            I = digit * 0x05 & 0xFFFF;
         }
 
         private void OP_Fx33(uint opcode)
@@ -738,7 +738,7 @@ namespace Chip8Emu
                 memory.@byte![I + i] = registers.@byte![i];
             // Original COSMAC VIP increments I; memoryQuirk disables this for modern ROMs
             if (!memoryQuirk)
-                I = (I + Vx + 1) & 0xFFFF;
+                I = I + Vx + 1 & 0xFFFF;
         }
 
         private void OP_Fx65(uint opcode)
@@ -748,7 +748,7 @@ namespace Chip8Emu
                 registers.@byte![i] = memory.@byte![I + i];
             // Original COSMAC VIP increments I; memoryQuirk disables this for modern ROMs
             if (!memoryQuirk)
-                I = (I + Vx + 1) & 0xFFFF;
+                I = I + Vx + 1 & 0xFFFF;
         }
     }
 }

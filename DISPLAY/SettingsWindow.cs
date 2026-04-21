@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Chip8Emu.CORE;
 using ImGuiNET;
 
 namespace Chip8Emu

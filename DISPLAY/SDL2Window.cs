@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Chip8Emu.CORE;
 using SDL2;
 using Silk.NET.OpenGL;
 using static SDL2.SDL;
