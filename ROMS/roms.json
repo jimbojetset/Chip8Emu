@@ -395,7 +395,7 @@
       "VFReset": null,
       "MemoryQuirk": null,
       "ClippingQuirk": null,
-      "DisplayWaitQuirk": false,
+      "DisplayWaitQuirk": true,
       "KeyReleaseWaitQuirk": null
     }
   },
@@ -409,7 +409,7 @@
       "VFReset": null,
       "MemoryQuirk": null,
       "ClippingQuirk": null,
-      "DisplayWaitQuirk": false,
+      "DisplayWaitQuirk": true,
       "KeyReleaseWaitQuirk": null
     }
   },
