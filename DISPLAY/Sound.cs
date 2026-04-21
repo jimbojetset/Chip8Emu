@@ -20,23 +20,76 @@ namespace Chip8Emu
         {
             if (_audioInitialized) return;
 
+            // Ensure SDL audio subsystem is initialized (safe if already initialized)
+            if (SDL_Init(SDL_INIT_AUDIO) < 0)
+            {
+                Console.WriteLine($"SDL_Init(SDL_INIT_AUDIO) failed: {SDL_GetError()}");
+                return;
+            }
+
             SDL_AudioSpec want = new()
             {
                 freq = 44100,
-                format = AUDIO_S16LSB,
+                // Use system-endian sample format for portability
+                format = AUDIO_S16SYS,
                 channels = 1,
                 samples = 2048,
                 callback = null
             };
 
-            // Get the default audio device name
+            // Enumerate audio devices and optionally prompt the user to select one
             int deviceCount = SDL_GetNumAudioDevices(0);
-            string? deviceName = deviceCount > 0 ? SDL_GetAudioDeviceName(0, 0) : null;
+            Console.WriteLine($"SDL audio device count: {deviceCount}");
+            string? deviceName = null;
+            var names = new System.Collections.Generic.List<string>();
+            for (int i = 0; i < deviceCount; i++)
+            {
+                string? name = null;
+                try { name = SDL_GetAudioDeviceName(i, 0); } catch { name = null; }
+                names.Add(name ?? string.Empty);
+                Console.WriteLine($"  [{i}] {name}");
+            }
 
-            _audioDevice = SDL_OpenAudioDevice(deviceName!, 0, ref want, out _audioSpec, 0);
+            if (deviceCount > 1)
+            {
+                Console.WriteLine("Multiple audio devices detected. Press Enter to use the system default device [0], or enter the index number of the device to use:");
+                Console.Write("> ");
+                try
+                {
+                    string? input = Console.ReadLine();
+                    if (!string.IsNullOrWhiteSpace(input))
+                    {
+                        if (int.TryParse(input.Trim(), out int idx) && idx >= 0 && idx < names.Count)
+                        {
+                            deviceName = names[idx];
+                            Console.WriteLine($"User selected device [{idx}] {deviceName}");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid selection, using system default device.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Using system default audio device.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reading device selection: {ex.Message}. Using system default device.");
+                }
+            }
+            else if (deviceCount == 1)
+            {
+                deviceName = names.Count > 0 ? names[0] : null;
+                Console.WriteLine($"Single audio device available: {deviceName}");
+            }
+
+            // If deviceName is null, SDL_OpenAudioDevice will open the system default device.
+            _audioDevice = SDL_OpenAudioDevice(deviceName, 0, ref want, out _audioSpec, 0);
             if (_audioDevice == 0)
             {
-                Console.WriteLine($"Failed to open audio device: {SDL_GetError()}");
+                Console.WriteLine($"Failed to open audio device '{deviceName ?? "<default>"}': {SDL_GetError()}");
                 return;
             }
 
@@ -77,10 +130,7 @@ namespace Chip8Emu
                 {
                     fixed (short* ptr = samples)
                     {
-                        if (SDL_QueueAudio(_audioDevice, (IntPtr)ptr, (uint)(sampleCount * sizeof(short))) < 0)
-                        {
-                            Console.WriteLine($"Failed to queue audio: {SDL_GetError()}");
-                        }
+                        SDL_QueueAudio(_audioDevice, (IntPtr)ptr, (uint)(sampleCount * sizeof(short)));
                     }
                 }
             }
