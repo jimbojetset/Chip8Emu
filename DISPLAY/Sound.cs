@@ -66,17 +66,20 @@ namespace Chip8Emu
                         }
                         else
                         {
-                            Console.WriteLine("Invalid selection, using system default device.");
+                            Console.WriteLine("Invalid selection, using device [0].");
+                            deviceName = names[0];
                         }
                     }
                     else
                     {
-                        Console.WriteLine("Using system default audio device.");
+                        Console.WriteLine("Using device [0].");
+                        deviceName = names[0];
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error reading device selection: {ex.Message}. Using system default device.");
+                    Console.WriteLine($"Error reading device selection: {ex.Message}. Using device [0].");
+                    deviceName = names[0];
                 }
             }
             else if (deviceCount == 1)
