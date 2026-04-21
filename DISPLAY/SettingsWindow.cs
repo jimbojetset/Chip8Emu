@@ -35,6 +35,7 @@ namespace Chip8Emu
         private int _selectedRomIndex = -1;
         private string _romsDirectory = "ROMS";
         private string _currentRomName = "";
+        private string _currentRomPath = "";
         private bool _applyDefaultLayout = true;
         private readonly bool _startCollapsed;
         private bool _collapseOnNextDraw;
@@ -82,6 +83,19 @@ namespace Chip8Emu
                 string.Equals(e.File, romFileName, StringComparison.OrdinalIgnoreCase));
 
             _currentRomName = match?.Title ?? romFileName;
+
+            if (File.Exists(romPath))
+            {
+                _currentRomPath = romPath;
+            }
+            else if (match != null)
+            {
+                _currentRomPath = Path.Combine(_romsDirectory, match.File);
+            }
+            else
+            {
+                _currentRomPath = "";
+            }
         }
 
         private void SyncFromChip8()
@@ -235,7 +249,12 @@ namespace Chip8Emu
 
             ImGui.SetNextWindowBgAlpha(UiLayoutDefaults.SettingsWindowBackgroundAlpha);
 
-            if (ImGui.Begin(UiLayoutDefaults.SettingsWindowTitle, ref _isVisible))
+            bool showContents = ImGui.Begin(UiLayoutDefaults.SettingsWindowTitle, ref _isVisible, ImGuiWindowFlags.NoResize);
+            bool isCollapsed = ImGui.IsWindowCollapsed();
+            Vector2 windowPos = ImGui.GetWindowPos();
+            Vector2 windowSize = ImGui.GetWindowSize();
+
+            if (showContents)
             {
                 if (ImGui.BeginTabBar("SettingsTabs"))
                 {
@@ -258,6 +277,57 @@ namespace Chip8Emu
                 }
             }
             ImGui.End();
+
+            if (isCollapsed)
+            {
+                DrawCollapsedSettingsBar(windowPos, windowSize);
+            }
+        }
+
+        private void DrawCollapsedSettingsBar(Vector2 collapsedWindowPos, Vector2 collapsedWindowSize)
+        {
+            ImGui.SetNextWindowPos(new Vector2(collapsedWindowPos.X, collapsedWindowPos.Y + collapsedWindowSize.Y + 4f), ImGuiCond.Always);
+            ImGui.SetNextWindowBgAlpha(UiLayoutDefaults.SettingsWindowBackgroundAlpha);
+
+            Vector2 buttonSize = ImGui.CalcTextSize("Reload");
+            buttonSize.X += ImGui.GetStyle().FramePadding.X * 2f;
+            buttonSize.Y += ImGui.GetStyle().FramePadding.Y * 2f;
+
+            ImGui.SetNextWindowSize(buttonSize, ImGuiCond.Always);
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
+
+            ImGuiWindowFlags flags =
+                ImGuiWindowFlags.NoDecoration |
+                ImGuiWindowFlags.NoSavedSettings |
+                ImGuiWindowFlags.NoFocusOnAppearing |
+                ImGuiWindowFlags.NoNav;
+
+            if (ImGui.Begin("##SettingsCollapsedBar", flags))
+            {
+                bool canReload = !string.IsNullOrWhiteSpace(_currentRomPath);
+                if (!canReload)
+                {
+                    ImGui.BeginDisabled();
+                }
+
+                if (ImGui.Button("Reload"))
+                {
+                    _loadRomCallback(_currentRomPath);
+                }
+
+                if (!canReload)
+                {
+                    ImGui.EndDisabled();
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(canReload ? "Reload current ROM" : "No ROM loaded");
+                }
+            }
+            ImGui.End();
+            ImGui.PopStyleVar(2);
         }
 
         private void DrawRomSection()
@@ -333,6 +403,7 @@ namespace Chip8Emu
                 RomEntry entry = _romEntries[_selectedRomIndex];
                 string romPath = Path.Combine(_romsDirectory, entry.File);
                 _currentRomName = entry.Title;
+                _currentRomPath = romPath;
 
                 if (entry.Quirks != null)
                 {
