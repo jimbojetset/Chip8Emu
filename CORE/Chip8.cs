@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Chip8Emu.CORE
 {
@@ -139,9 +140,17 @@ namespace Chip8Emu.CORE
         // Get the raw video buffer for rendering
         public byte[] GetVideoBuffer() => video.@byte!;
 
+        // Font base address (configurable: 0x000 or 0x050 are common)
+        private int fontBaseAddress = 0x000;
+        public int FontBaseAddress
+        {
+            get { return fontBaseAddress; }
+            set { fontBaseAddress = value & 0x0FFF; } // constrain to 12-bit address space
+        }
 
-        private readonly byte[] FONTS =
-        [
+
+        private readonly byte[] FONTS = new byte[]
+        {
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
             0x20, 0x60, 0x20, 0x20, 0x70, // 1
             0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -158,7 +167,7 @@ namespace Chip8Emu.CORE
             0xE0, 0x90, 0x90, 0x90, 0xE0, // D
             0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
             0xF0, 0x80, 0xF0, 0x80, 0x80  // F
-        ];
+        };
 
         public Chip8()
         {
@@ -185,10 +194,11 @@ namespace Chip8Emu.CORE
             // Clear registers
             Array.Clear(registers.@byte!, 0, registers.@byte!.Length);
 
-            // Clear memory and reload fonts
+            // Clear memory and reload fonts at configurable base address
             Array.Clear(memory.@byte!, 0, memory.@byte!.Length);
+            int baseAddr = Math.Min(fontBaseAddress, memory.@byte!.Length - FONTSET_SIZE);
             for (uint i = 0; i < FONTSET_SIZE; i++)
-                memory.@byte![i] = FONTS[i];
+                memory.@byte![baseAddr + (int)i] = FONTS[i];
 
             // Clear video buffer
             Array.Clear(video.@byte!, 0, video.@byte!.Length);
@@ -262,20 +272,24 @@ namespace Chip8Emu.CORE
         private void RunEmulator()
         {
             running = true;
+            const double frameMs = 1000.0 / 60.0; // target 60Hz
             _frameStopwatch.Restart();
 
             // Main run loop
             while (running)
             {
-                double frameTimer = _frameStopwatch.Elapsed.TotalMilliseconds;
-                double currentTime = frameTimer;
+                double frameStart = _frameStopwatch.Elapsed.TotalMilliseconds;
 
                 // Clear VBlank wait at start of each frame
                 waitingForVBlank = false;
 
-                //60Hz loop
-                while (currentTime - frameTimer < 16.66)
+                // Execute cycles until we've consumed the frame budget or a VBlank wait occurs
+                while (true)
                 {
+                    double elapsed = _frameStopwatch.Elapsed.TotalMilliseconds - frameStart;
+                    if (elapsed >= frameMs)
+                        break;
+
                     //Frame loop - do a batch of cycles before checking time
                     for (int cycles = 0; cycles < frameSize; cycles++)
                     {
@@ -292,19 +306,20 @@ namespace Chip8Emu.CORE
                         ExecuteOpcode(opcode);
                     }
 
-                    // Display wait quirk: wait for remaining frame time then break 
                     if (displayWaitQuirk && waitingForVBlank)
-                    {
-                        double remaining = 16.66 - (currentTime - frameTimer);
-                        if (remaining > 0)
-                            Thread.Sleep((int)remaining);
                         break;
-                    }
-
-                    currentTime = _frameStopwatch.Elapsed.TotalMilliseconds;
                 }
+
                 UpdateTimers();
                 UpdateDisplay();
+
+                // High-resolution wait for the remainder of the frame
+                double frameElapsed = _frameStopwatch.Elapsed.TotalMilliseconds - frameStart;
+                double remaining = frameMs - frameElapsed;
+                if (remaining > 1)
+                    Thread.Sleep((int)(remaining - 1));
+                while (_frameStopwatch.Elapsed.TotalMilliseconds - frameStart < frameMs)
+                    Thread.SpinWait(10);
             }
             running = false;
         }
@@ -370,14 +385,14 @@ namespace Chip8Emu.CORE
                 if (!playingSound)
                 {
                     playingSound = true;
-                    Sound.PlaySound(500, (int)(ST * (1000f / 60)));
+                    Sound.StartTone(500);
                 }
                 ST--;
             }
             else if (playingSound)
             {
                 playingSound = false;
-                Sound.StopSound();
+                Sound.StopTone();
             }
         }
 
@@ -591,7 +606,10 @@ namespace Chip8Emu.CORE
                 if (clippingQuirk && yPos + row >= VIDEO_HEIGHT)
                     break;
 
-                uint spriteByte = memory.@byte![I + row];
+                // Safe sprite byte fetch with wrapping to avoid out-of-range
+                int addr = (int)((I + row) % (uint)memory.@byte!.Length);
+                uint spriteByte = memory.@byte![addr];
+
                 for (uint col = 0; col < 8; col++)
                 {
                     // Clipping: skip pixels past screen edge
@@ -600,9 +618,9 @@ namespace Chip8Emu.CORE
 
                     uint vp = clippingQuirk
                         ? (yPos + row) * VIDEO_WIDTH + xPos + col
-                        : (yPos + row) % VIDEO_HEIGHT * VIDEO_WIDTH + (xPos + col) % VIDEO_WIDTH;
+                        : ((yPos + row) % VIDEO_HEIGHT) * VIDEO_WIDTH + ((xPos + col) % VIDEO_WIDTH);
 
-                    if ((spriteByte & 0x80 >> (int)col) != 0)
+                    if ((spriteByte & (0x80 >> (int)col)) != 0)
                     {
                         if (video.@byte![vp] == 1)
                             registers.@byte![15] = 1;
@@ -716,7 +734,8 @@ namespace Chip8Emu.CORE
         {
             uint Vx = (opcode & 0x0F00) >> 8;
             uint digit = registers.@byte![Vx];
-            I = digit * 0x05 & 0xFFFF;
+            // Point I to the font sprite for the digit at the configurable font base
+            I = (uint)((fontBaseAddress + (int)digit * 5) & 0xFFFF);
         }
 
         private void OP_Fx33(uint opcode)
