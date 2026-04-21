@@ -28,13 +28,13 @@
     "file": "Astro Dodge [Revival Studios, 2008].ch8",
     "description": "Astro Dodge (2008), by Revival Studios\u003Cbr/\u003E\u003Cbr/\u003EYour goal is to make your way through the asteroids field and dodge the asteroids, scoring points for each asteroid you are able to dodge. Button 2,4,6,8 will move your ship, button 5 will start the game.",
     "quirks": {
-      "ShiftQuirk": null,
-      "JumpQuirk": null,
-      "VFReset": null,
+      "ShiftQuirk": false,
+      "JumpQuirk": false,
+      "VFReset": false,
       "MemoryQuirk": true,
-      "ClippingQuirk": null,
-      "DisplayWaitQuirk": null,
-      "KeyReleaseWaitQuirk": null
+      "ClippingQuirk": false,
+      "DisplayWaitQuirk": false,
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -58,16 +58,24 @@
       "JumpQuirk": true,
       "VFReset": false,
       "MemoryQuirk": true,
-      "ClippingQuirk": null,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": true,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
     "title": "BLITZ",
     "file": "Blitz [David Winter].ch8",
     "description": "Blitz, by David Winter\u003Cbr/\u003E\u003Cbr/\u003EThis game is a BOMBER clone. You are in a plane, and you must destroy the towers of a town. Your plane is flying left to right, and goes down. Use 5 to drop a bomb. The game ends when you crash yourself on a tower...",
-    "quirks": null
+    "quirks": {
+      "ShiftQuirk": false,
+      "JumpQuirk": false,
+      "VFReset": true,
+      "MemoryQuirk": false,
+      "ClippingQuirk": true,
+      "DisplayWaitQuirk": true,
+      "KeyReleaseWaitQuirk": true
+    }
   },
   {
     "title": "BMP VIEWER",
@@ -78,9 +86,9 @@
       "JumpQuirk": true,
       "VFReset": false,
       "MemoryQuirk": true,
-      "ClippingQuirk": null,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": false,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -96,11 +104,11 @@
     "quirks": {
       "ShiftQuirk": true,
       "JumpQuirk": true,
-      "VFReset": null,
-      "MemoryQuirk": null,
-      "ClippingQuirk": null,
+      "VFReset": false,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": true,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -110,11 +118,11 @@
     "quirks": {
       "ShiftQuirk": true,
       "JumpQuirk": true,
-      "VFReset": null,
-      "MemoryQuirk": null,
-      "ClippingQuirk": null,
+      "VFReset": false,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": true,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -124,11 +132,11 @@
     "quirks": {
       "ShiftQuirk": true,
       "JumpQuirk": true,
-      "VFReset": null,
-      "MemoryQuirk": null,
-      "ClippingQuirk": null,
+      "VFReset": false,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": true,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -166,13 +174,13 @@
     "file": "Coin Flipping [Carmelo Cortez, 1978].ch8",
     "description": "Coin Flipping (1978), by Carmelo Cortez\u003Cbr/\u003E\u003Cbr/\u003EThe game is a Coin FlLpping program. Flip run up and the computer starts to flip a coin, and at the same tine shosing heads and tails on the screen, stopping at the value set in VC.",
     "quirks": {
-      "ShiftQuirk": null,
-      "JumpQuirk": null,
-      "VFReset": null,
-      "MemoryQuirk": null,
-      "ClippingQuirk": null,
+      "ShiftQuirk": false,
+      "JumpQuirk": false,
+      "VFReset": false,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": false,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -184,9 +192,9 @@
       "JumpQuirk": true,
       "VFReset": false,
       "MemoryQuirk": true,
-      "ClippingQuirk": null,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": false,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -266,13 +274,13 @@
     "file": "Hidden [David Winter, 1996].ch8",
     "description": "Hidden (1996), by David Winter\u003Cbr/\u003E\u003Cbr/\u003EHIDDEN is a \u0022memory\u0022 game. It is very simple to play. The rules are as follow: your goal is to find all the identical cards in a minimum time. You are playing in a 4*4 card grid. You can see only two cards at the same time. Once this time passed, these two cards will remain shown if they are identical, otherwise they will be hidden again. When the game is finished, two scores are shown: SC is your score, corresponding to the number of tries HI is the best score (smallest number of tries made to finish) The keys are: [8] - Move DOWN, [4] - Move LEFT, [5] - Show card, [6] -  Move RIGHT, [2] - Move UP",
     "quirks": {
-      "ShiftQuirk": null,
-      "JumpQuirk": null,
-      "VFReset": null,
+      "ShiftQuirk": false,
+      "JumpQuirk": false,
+      "VFReset": false,
       "MemoryQuirk": true,
-      "ClippingQuirk": null,
-      "DisplayWaitQuirk": null,
-      "KeyReleaseWaitQuirk": null
+      "ClippingQuirk": false,
+      "DisplayWaitQuirk": false,
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -308,9 +316,9 @@
       "JumpQuirk": true,
       "VFReset": false,
       "MemoryQuirk": true,
-      "ClippingQuirk": null,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": false,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -392,11 +400,11 @@
     "quirks": {
       "ShiftQuirk": true,
       "JumpQuirk": true,
-      "VFReset": null,
-      "MemoryQuirk": null,
-      "ClippingQuirk": null,
+      "VFReset": false,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": true,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -406,11 +414,11 @@
     "quirks": {
       "ShiftQuirk": true,
       "JumpQuirk": true,
-      "VFReset": null,
-      "MemoryQuirk": null,
-      "ClippingQuirk": null,
+      "VFReset": false,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": true,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -464,9 +472,9 @@
       "JumpQuirk": true,
       "VFReset": false,
       "MemoryQuirk": true,
-      "ClippingQuirk": null,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": false,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -538,9 +546,9 @@
       "JumpQuirk": true,
       "VFReset": false,
       "MemoryQuirk": true,
-      "ClippingQuirk": null,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": false,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -566,13 +574,13 @@
     "file": "Stars [Sergey Naydenov, 2010].ch8",
     "description": "Stars Demo (2010), by Sergey Naydenov",
     "quirks": {
-      "ShiftQuirk": null,
-      "JumpQuirk": null,
-      "VFReset": null,
+      "ShiftQuirk": false,
+      "JumpQuirk": false,
+      "VFReset": false,
       "MemoryQuirk": true,
-      "ClippingQuirk": null,
-      "DisplayWaitQuirk": null,
-      "KeyReleaseWaitQuirk": null
+      "ClippingQuirk": false,
+      "DisplayWaitQuirk": false,
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -600,11 +608,11 @@
     "quirks": {
       "ShiftQuirk": true,
       "JumpQuirk": true,
-      "VFReset": null,
-      "MemoryQuirk": null,
-      "ClippingQuirk": null,
+      "VFReset": false,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": false,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -622,9 +630,9 @@
       "JumpQuirk": true,
       "VFReset": false,
       "MemoryQuirk": true,
-      "ClippingQuirk": null,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": false,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -634,11 +642,11 @@
     "quirks": {
       "ShiftQuirk": true,
       "JumpQuirk": true,
-      "VFReset": null,
-      "MemoryQuirk": null,
-      "ClippingQuirk": null,
+      "VFReset": false,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": false,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -686,9 +694,9 @@
       "JumpQuirk": true,
       "VFReset": false,
       "MemoryQuirk": true,
-      "ClippingQuirk": null,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": false,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
@@ -698,11 +706,11 @@
     "quirks": {
       "ShiftQuirk": true,
       "JumpQuirk": true,
-      "VFReset": null,
-      "MemoryQuirk": null,
-      "ClippingQuirk": null,
+      "VFReset": false,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
       "DisplayWaitQuirk": false,
-      "KeyReleaseWaitQuirk": null
+      "KeyReleaseWaitQuirk": false
     }
   },
   {
