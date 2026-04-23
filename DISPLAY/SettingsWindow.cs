@@ -278,6 +278,18 @@ namespace Chip8Emu
                 _requestRedraw();
             }
 
+            if (!isCollapsed && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+            {
+                bool clickedInsideSettings = ImGui.IsWindowHovered(
+                    ImGuiHoveredFlags.RootAndChildWindows |
+                    ImGuiHoveredFlags.AllowWhenBlockedByActiveItem);
+                if (!clickedInsideSettings)
+                {
+                    _collapseOnNextDraw = true;
+                    _requestRedraw();
+                }
+            }
+
             if (showContents)
             {
                 if (ImGui.BeginTabBar("SettingsTabs"))
