@@ -254,6 +254,15 @@ namespace Chip8Emu
             Vector2 windowPos = ImGui.GetWindowPos();
             Vector2 windowSize = ImGui.GetWindowSize();
 
+            if (!isCollapsed && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+            {
+                bool clickedInsideSettings = ImGui.IsWindowHovered(ImGuiHoveredFlags.RootAndChildWindows);
+                if (!clickedInsideSettings)
+                {
+                    _collapseOnNextDraw = true;
+                }
+            }
+
             if (showContents)
             {
                 if (ImGui.BeginTabBar("SettingsTabs"))
