@@ -437,7 +437,15 @@
     "title": "QUIRKS",
     "file": "quirks.ch8",
     "description": "Quirks, by Timendus (CHIP-8 Test Suite)\u003Cbr/\u003E\u003Cbr/\u003ETests interpreter quirks that vary between CHIP-8 implementations, such as shift behaviour, load/store register incrementing, display clipping, and jumping behaviour.",
-    "quirks": null
+    "quirks": {
+      "ShiftQuirk": false,
+      "JumpQuirk": false,
+      "VFReset": true,
+      "MemoryQuirk": false,
+      "ClippingQuirk": true,
+      "DisplayWaitQuirk": true,
+      "KeyReleaseWaitQuirk": true
+    }
   },
   {
     "title": "RANDOM NUMBER TEST",

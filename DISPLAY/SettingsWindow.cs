@@ -30,6 +30,7 @@ namespace Chip8Emu
     {
         private readonly Chip8 _chip8;
         private readonly Action<string> _loadRomCallback;
+        private readonly Action _requestRedraw;
 
         private RomEntry[] _romEntries = Array.Empty<RomEntry>();
         private int _selectedRomIndex = -1;
@@ -53,7 +54,16 @@ namespace Chip8Emu
         public bool IsVisible
         {
             get => _isVisible;
-            set => _isVisible = value;
+            set
+            {
+                if (_isVisible == value)
+                {
+                    return;
+                }
+
+                _isVisible = value;
+                _requestRedraw();
+            }
         }
 
         public string CurrentRomTitle => _currentRomName;
@@ -63,11 +73,12 @@ namespace Chip8Emu
             WriteIndented = true
         };
 
-        public SettingsWindow(Chip8 chip8, Action<string> loadRomCallback, bool startCollapsed = UiLayoutDefaults.SettingsWindowStartsCollapsed)
+        public SettingsWindow(Chip8 chip8, Action<string> loadRomCallback, bool startCollapsed = UiLayoutDefaults.SettingsWindowStartsCollapsed, Action? requestRedraw = null)
         {
             _chip8 = chip8;
             _loadRomCallback = loadRomCallback;
             _startCollapsed = startCollapsed;
+            _requestRedraw = requestRedraw ?? (() => { });
 
             // Initial sync from Chip8 state
             SyncFromChip8();
@@ -254,15 +265,6 @@ namespace Chip8Emu
             Vector2 windowPos = ImGui.GetWindowPos();
             Vector2 windowSize = ImGui.GetWindowSize();
 
-            if (!isCollapsed && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-            {
-                bool clickedInsideSettings = ImGui.IsWindowHovered(ImGuiHoveredFlags.RootAndChildWindows);
-                if (!clickedInsideSettings)
-                {
-                    _collapseOnNextDraw = true;
-                }
-            }
-
             if (showContents)
             {
                 if (ImGui.BeginTabBar("SettingsTabs"))
@@ -440,6 +442,7 @@ namespace Chip8Emu
 
                 _loadRomCallback(romPath);
                 _collapseOnNextDraw = true;
+                _requestRedraw();
             }
         }
 

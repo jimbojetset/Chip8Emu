@@ -140,7 +140,7 @@ namespace Chip8Emu
 
                 // Create settings window with ROM load callback
                 bool startSettingsCollapsed = hasCommandLineSwitches ? UiLayoutDefaults.SettingsWindowStartsCollapsed : false;
-                _settingsWindow = new SettingsWindow(_chip8, LoadRom, startSettingsCollapsed);
+                _settingsWindow = new SettingsWindow(_chip8, LoadRom, startSettingsCollapsed, () => _redrawRequested = true);
                 if (romPath != null)
                 {
                     _settingsWindow.IsVisible = false;
@@ -193,6 +193,10 @@ namespace Chip8Emu
                     bool shouldRender = _redrawRequested || sawEvent;
                     if (shouldRender)
                     {
+                        // Consume the current frame request up-front so requests raised during Draw()
+                        // persist and schedule the next frame immediately.
+                        _redrawRequested = false;
+
                         // Calculate delta time from monotonic clock only when drawing a new frame.
                         double currentFrameSeconds = frameStopwatch.Elapsed.TotalSeconds;
                         float deltaTime = (float)(currentFrameSeconds - lastFrameSeconds);
@@ -202,7 +206,7 @@ namespace Chip8Emu
                         _window.BeginFrame(deltaTime);
 
                         // Toggle settings window with F1
-                        if (ImGui.IsKeyPressed(ImGuiKey.F1) && _settingsWindow != null)
+                        if (ImGui.IsKeyPressed(ImGuiKey.F1, false) && _settingsWindow != null)
                         {
                             _settingsWindow.IsVisible = !_settingsWindow.IsVisible;
                             _redrawRequested = true;
@@ -216,7 +220,6 @@ namespace Chip8Emu
 
                         _videoBuffer = _chip8.GetVideoBuffer();
                         _window.Render(_videoBuffer);
-                        _redrawRequested = false;
 
                         // Keep a frame cap fallback when VSync doesn't block (common on some platforms/drivers).
                         double frameElapsed = frameStopwatch.Elapsed.TotalSeconds - currentFrameSeconds;
