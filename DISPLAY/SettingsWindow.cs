@@ -32,16 +32,18 @@ namespace Chip8Emu
         private readonly Action<string> _loadRomCallback;
         private readonly Action _requestRedraw;
 
+        // UI layout/state
+        private readonly bool _startCollapsed;
+        private bool _isVisible = true;
+        private bool _applyDefaultLayout = true;
+        private bool _collapseOnNextDraw;
+
+        // ROM metadata/state
         private RomEntry[] _romEntries = Array.Empty<RomEntry>();
         private int _selectedRomIndex = -1;
         private string _romsDirectory = "ROMS";
         private string _currentRomName = "";
         private string _currentRomPath = "";
-        private bool _applyDefaultLayout = true;
-        private readonly bool _startCollapsed;
-        private bool _collapseOnNextDraw;
-        private bool _lastCollapsedState;
-        private bool _collapseStateInitialized;
 
         // Quirk state (synced with Chip8)
         private bool _shiftQuirk;
@@ -52,7 +54,6 @@ namespace Chip8Emu
         private bool _displayWaitQuirk;
         private bool _keyReleaseWaitQuirk;
 
-        private bool _isVisible = true;
         public bool IsVisible
         {
             get => _isVisible;
@@ -266,17 +267,6 @@ namespace Chip8Emu
             bool isCollapsed = ImGui.IsWindowCollapsed();
             Vector2 windowPos = ImGui.GetWindowPos();
             Vector2 windowSize = ImGui.GetWindowSize();
-
-            if (!_collapseStateInitialized)
-            {
-                _lastCollapsedState = isCollapsed;
-                _collapseStateInitialized = true;
-            }
-            else if (_lastCollapsedState != isCollapsed)
-            {
-                _lastCollapsedState = isCollapsed;
-                _requestRedraw();
-            }
 
             if (!isCollapsed && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
             {
