@@ -2,6 +2,7 @@ using Chip8Emu.CORE;
 using ImGuiNET;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace Chip8Emu
 {
@@ -14,6 +15,7 @@ namespace Chip8Emu
         private static string _pendingRomPath = "";
         private static readonly object _romLoadLock = new();
         private static bool _useEmbeddedRom = false;
+        private static volatile bool _redrawRequested = true;
 
         // Embedded test ROM - displays "CHIP8" logo
         private static readonly byte[] EmbeddedRom = {
@@ -134,6 +136,7 @@ namespace Chip8Emu
                     KeyReleaseWaitQuirk = keyReleaseWaitQuirk,
                     FrameSize = 4
                 };
+                _chip8.OnDisplayUpdate = () => _redrawRequested = true;
 
                 // Create settings window with ROM load callback
                 bool startSettingsCollapsed = hasCommandLineSwitches ? UiLayoutDefaults.SettingsWindowStartsCollapsed : false;
@@ -156,7 +159,9 @@ namespace Chip8Emu
 
                 // Main loop - keep window open until user closes it
                 Console.WriteLine("Entering main loop...");
-                var lastFrameTime = DateTime.Now;
+                var frameStopwatch = Stopwatch.StartNew();
+                double lastFrameSeconds = frameStopwatch.Elapsed.TotalSeconds;
+                const double targetFrameSeconds = 1.0 / 60.0;
 
                 while (_window.IsRunning)
                 {
@@ -178,35 +183,59 @@ namespace Chip8Emu
                         Thread.Sleep(50); // Give emulator thread time to stop
                         StartEmulator(romToLoad);
                         _settingsWindow?.SetCurrentRom(romToLoad);
+                        _redrawRequested = true;
                     }
 
-                    // Calculate delta time
-                    var currentTime = DateTime.Now;
-                    float deltaTime = (float)(currentTime - lastFrameTime).TotalSeconds;
-                    lastFrameTime = currentTime;
+                    // Block briefly for events to avoid high CPU when idle.
+                    int waitTimeoutMs = _settingsWindow?.IsVisible == true ? 1 : 8;
+                    bool sawEvent = _window.ProcessEvents(_chip8, waitTimeoutMs);
 
-                    _window.ProcessEvents(_chip8);
-
-                    // Begin ImGui frame
-                    _window.BeginFrame(deltaTime);
-
-                    // Toggle settings window with F1
-                    if (ImGui.IsKeyPressed(ImGuiKey.F1) && _settingsWindow != null)
+                    bool shouldRender = _redrawRequested || sawEvent;
+                    if (shouldRender)
                     {
-                        _settingsWindow.IsVisible = !_settingsWindow.IsVisible;
+                        // Calculate delta time from monotonic clock only when drawing a new frame.
+                        double currentFrameSeconds = frameStopwatch.Elapsed.TotalSeconds;
+                        float deltaTime = (float)(currentFrameSeconds - lastFrameSeconds);
+                        lastFrameSeconds = currentFrameSeconds;
+
+                        // Begin ImGui frame
+                        _window.BeginFrame(deltaTime);
+
+                        // Toggle settings window with F1
+                        if (ImGui.IsKeyPressed(ImGuiKey.F1) && _settingsWindow != null)
+                        {
+                            _settingsWindow.IsVisible = !_settingsWindow.IsVisible;
+                            _redrawRequested = true;
+                        }
+
+                        // Draw settings window
+                        _settingsWindow?.Draw();
+
+                        // Show current ROM title in the window title
+                        _window.SetRomTitle(_settingsWindow?.CurrentRomTitle);
+
+                        _videoBuffer = _chip8.GetVideoBuffer();
+                        _window.Render(_videoBuffer);
+                        _redrawRequested = false;
+
+                        // Keep a frame cap fallback when VSync doesn't block (common on some platforms/drivers).
+                        double frameElapsed = frameStopwatch.Elapsed.TotalSeconds - currentFrameSeconds;
+                        double frameRemaining = targetFrameSeconds - frameElapsed;
+                        while (frameRemaining > 0)
+                        {
+                            if (frameRemaining > 0.002)
+                            {
+                                Thread.Sleep((int)((frameRemaining - 0.001) * 1000));
+                            }
+                            else
+                            {
+                                Thread.Yield();
+                            }
+
+                            frameElapsed = frameStopwatch.Elapsed.TotalSeconds - currentFrameSeconds;
+                            frameRemaining = targetFrameSeconds - frameElapsed;
+                        }
                     }
-
-                    // Draw settings window
-                    _settingsWindow?.Draw();
-
-                    // Show current ROM title in the window title
-                    _window.SetRomTitle(_settingsWindow?.CurrentRomTitle);
-
-                    // Always render (ImGui needs continuous updates)
-                    _videoBuffer = _chip8.GetVideoBuffer();
-                    _window.Render(_videoBuffer);
-
-                    // VSync handles frame timing now
                 }
 
                 _chip8.Stop();

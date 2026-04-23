@@ -764,5 +764,19 @@
       "DisplayWaitQuirk": true,
       "KeyReleaseWaitQuirk": true
     }
+  },
+  {
+    "title": "DANM8KU",
+    "file": "danm8ku.ch8",
+    "description": "danm8ku.ch8",
+    "quirks": {
+      "ShiftQuirk": false,
+      "JumpQuirk": true,
+      "VFReset": false,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
+      "DisplayWaitQuirk": false,
+      "KeyReleaseWaitQuirk": true
+    }
   }
 ]

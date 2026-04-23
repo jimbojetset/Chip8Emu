@@ -71,6 +71,13 @@ namespace Chip8Emu.CORE
             set { frameSize = value; }
         }
 
+        private int cpuHz = 25000; //cycles per frame (default 25kHz)
+        public int CpuHz
+        {
+            get { return cpuHz; }
+            set { cpuHz = 25000; }
+        }
+
         private const int VIDEO_WIDTH = 64;
         public static int VideoWidth
         {
@@ -202,6 +209,7 @@ namespace Chip8Emu.CORE
 
             // Clear video buffer
             Array.Clear(video.@byte!, 0, video.@byte!.Length);
+            OnDisplayUpdate?.Invoke();
 
             // Clear stack
             Array.Clear(STACK, 0, STACK.Length);
@@ -273,6 +281,7 @@ namespace Chip8Emu.CORE
         {
             running = true;
             const double frameMs = 1000.0 / 60.0; // target 60Hz
+            double cycleRemainder = 0.0;
             _frameStopwatch.Restart();
 
             // Main run loop
@@ -283,43 +292,43 @@ namespace Chip8Emu.CORE
                 // Clear VBlank wait at start of each frame
                 waitingForVBlank = false;
 
-                // Execute cycles until we've consumed the frame budget or a VBlank wait occurs
-                while (true)
+                // Run a fixed number of CPU cycles per frame instead of filling the entire frame budget.
+                double cyclesPerFrame = CpuHz / 60.0;
+                cycleRemainder += cyclesPerFrame;
+                int cyclesThisFrame = (int)cycleRemainder;
+                cycleRemainder -= cyclesThisFrame;
+
+                for (int cycles = 0; cycles < cyclesThisFrame; cycles++)
                 {
-                    double elapsed = _frameStopwatch.Elapsed.TotalMilliseconds - frameStart;
-                    if (elapsed >= frameMs)
-                        break;
-
-                    //Frame loop - do a batch of cycles before checking time
-                    for (int cycles = 0; cycles < frameSize; cycles++)
-                    {
-                        // Display wait quirk: stop executing until next frame after draw
-                        if (displayWaitQuirk && waitingForVBlank)
-                            break;
-
-                        if (PC >= memory.@byte!.Length - 1)
-                            throw new Exception($"Program counter out of range: 0x{PC:X}");
-
-                        uint opcode = (uint)memory.@byte![PC] << 8 | memory.@byte![PC + 1];
-
-                        // Execute current instruction
-                        ExecuteOpcode(opcode);
-                    }
-
+                    // Display wait quirk: stop executing until next frame after draw
                     if (displayWaitQuirk && waitingForVBlank)
                         break;
+
+                    if (PC >= memory.@byte!.Length - 1)
+                        throw new Exception($"Program counter out of range: 0x{PC:X}");
+
+                    uint opcode = (uint)memory.@byte![PC] << 8 | memory.@byte![PC + 1];
+
+                    // Execute current instruction
+                    ExecuteOpcode(opcode);
                 }
 
                 UpdateTimers();
-                UpdateDisplay();
 
                 // High-resolution wait for the remainder of the frame
                 double frameElapsed = _frameStopwatch.Elapsed.TotalMilliseconds - frameStart;
                 double remaining = frameMs - frameElapsed;
-                if (remaining > 1)
-                    Thread.Sleep((int)(remaining - 1));
-                while (_frameStopwatch.Elapsed.TotalMilliseconds - frameStart < frameMs)
-                    Thread.SpinWait(10);
+                while (remaining > 0)
+                {
+                    // Prefer sleep/yield over spin waiting to reduce host CPU usage.
+                    if (remaining > 2)
+                        Thread.Sleep((int)(remaining - 1));
+                    else
+                        Thread.Yield();
+
+                    frameElapsed = _frameStopwatch.Elapsed.TotalMilliseconds - frameStart;
+                    remaining = frameMs - frameElapsed;
+                }
             }
             running = false;
         }
@@ -396,14 +405,10 @@ namespace Chip8Emu.CORE
             }
         }
 
-        private void UpdateDisplay()
-        {
-            OnDisplayUpdate?.Invoke();
-        }
-
         private void OP_00E0()
         {
             video = new FIXED_BYTE_ARRAY { @byte = new byte[VIDEO_WIDTH * VIDEO_HEIGHT] };
+            OnDisplayUpdate?.Invoke();
         }
 
         private void OP_00EE()
@@ -630,6 +635,7 @@ namespace Chip8Emu.CORE
             }
             // Display wait quirk: signal to wait for next VBlank
             waitingForVBlank = true;
+            OnDisplayUpdate?.Invoke();
         }
 
         private void OP_Ex9E(uint opcode)

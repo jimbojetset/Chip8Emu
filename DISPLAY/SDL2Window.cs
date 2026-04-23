@@ -25,6 +25,9 @@ namespace Chip8Emu
         private int _texUniformLoc;
         private bool _disposed = false;
         private string? _lastWindowTitle;
+        private readonly float[] _textureData = new float[CHIP8_WIDTH * CHIP8_HEIGHT * 3];
+        private readonly byte[] _lastVideoBuffer = new byte[CHIP8_WIDTH * CHIP8_HEIGHT];
+        private bool _textureInitialized = false;
 
         private ImGuiController? _imguiController;
 
@@ -187,28 +190,45 @@ namespace Chip8Emu
             return shader;
         }
 
-        public void ProcessEvents(Chip8 chip8)
+        public bool ProcessEvents(Chip8 chip8, int waitTimeoutMs = 0)
         {
+            bool sawEvent = false;
+
+            // Optional blocking wait to avoid a tight poll loop when idle.
+            if (waitTimeoutMs > 0 && SDL_WaitEventTimeout(out SDL_Event waitedEvent, waitTimeoutMs) != 0)
+            {
+                sawEvent = true;
+                HandleEvent(waitedEvent, chip8);
+            }
+
             while (SDL_PollEvent(out SDL_Event e) != 0)
             {
-                // Forward events to ImGui
-                _imguiController?.ProcessEvent(e);
+                sawEvent = true;
+                HandleEvent(e, chip8);
+            }
 
-                switch (e.type)
-                {
-                    case SDL_EventType.SDL_QUIT:
-                        IsRunning = false;
-                        chip8.Stop();
-                        break;
+            return sawEvent;
+        }
 
-                    case SDL_EventType.SDL_KEYDOWN:
-                        HandleKeyDown(e.key.keysym.sym, chip8);
-                        break;
+        private void HandleEvent(SDL_Event e, Chip8 chip8)
+        {
+            // Forward events to ImGui
+            _imguiController?.ProcessEvent(e);
 
-                    case SDL_EventType.SDL_KEYUP:
-                        HandleKeyUp(e.key.keysym.sym, chip8);
-                        break;
-                }
+            switch (e.type)
+            {
+                case SDL_EventType.SDL_QUIT:
+                    IsRunning = false;
+                    chip8.Stop();
+                    break;
+
+                case SDL_EventType.SDL_KEYDOWN:
+                    HandleKeyDown(e.key.keysym.sym, chip8);
+                    break;
+
+                case SDL_EventType.SDL_KEYUP:
+                    HandleKeyUp(e.key.keysym.sym, chip8);
+                    break;
             }
         }
 
@@ -268,41 +288,63 @@ namespace Chip8Emu
 
         public unsafe void Render(byte[] videoBuffer)
         {
-            // Convert CHIP-8 video buffer to RGB float texture data
-            float[] textureData = new float[CHIP8_WIDTH * CHIP8_HEIGHT * 3];
-            for (int y = 0; y < CHIP8_HEIGHT; y++)
+            var gl = _gl;
+            if (gl == null)
+                return;
+
+            bool textureChanged = !_textureInitialized;
+            if (!textureChanged)
             {
-                for (int x = 0; x < CHIP8_WIDTH; x++)
+                for (int i = 0; i < _lastVideoBuffer.Length; i++)
                 {
-                    int bufIndex = y * CHIP8_WIDTH + x;
-                    int texIndex = (y * CHIP8_WIDTH + x) * 3;
-                    bool isOn = videoBuffer[bufIndex] != 0;
-                    float[] color = isOn ? _onColor : _offColor;
-                    textureData[texIndex + 0] = color[0];
-                    textureData[texIndex + 1] = color[1];
-                    textureData[texIndex + 2] = color[2];
+                    if (_lastVideoBuffer[i] != videoBuffer[i])
+                    {
+                        textureChanged = true;
+                        break;
+                    }
                 }
             }
 
-            // Upload texture data
-            _gl!.BindTexture(TextureTarget.Texture2D, _chip8Texture);
-            fixed (float* data = textureData)
+            if (textureChanged)
             {
-                _gl.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, CHIP8_WIDTH, CHIP8_HEIGHT, PixelFormat.Rgb, PixelType.Float, data);
+                // Convert CHIP-8 video buffer to RGB float texture data only when content changes.
+                for (int y = 0; y < CHIP8_HEIGHT; y++)
+                {
+                    for (int x = 0; x < CHIP8_WIDTH; x++)
+                    {
+                        int bufIndex = y * CHIP8_WIDTH + x;
+                        int texIndex = (y * CHIP8_WIDTH + x) * 3;
+                        bool isOn = videoBuffer[bufIndex] != 0;
+                        float[] color = isOn ? _onColor : _offColor;
+                        _textureData[texIndex + 0] = color[0];
+                        _textureData[texIndex + 1] = color[1];
+                        _textureData[texIndex + 2] = color[2];
+                    }
+                }
+
+                System.Buffer.BlockCopy(videoBuffer, 0, _lastVideoBuffer, 0, _lastVideoBuffer.Length);
+                _textureInitialized = true;
+
+                // Upload texture data
+                gl.BindTexture(TextureTarget.Texture2D, _chip8Texture);
+                fixed (float* data = _textureData)
+                {
+                    gl.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, CHIP8_WIDTH, CHIP8_HEIGHT, PixelFormat.Rgb, PixelType.Float, data);
+                }
             }
 
             // Clear screen
-            _gl.ClearColor(0f, 0f, 0f, 1f);
-            _gl.Clear(ClearBufferMask.ColorBufferBit);
+            gl.ClearColor(0f, 0f, 0f, 1f);
+            gl.Clear(ClearBufferMask.ColorBufferBit);
 
             // Draw CHIP-8 display
-            _gl.UseProgram(_quadShader);
-            _gl.Uniform1(_texUniformLoc, 0);
-            _gl.ActiveTexture(TextureUnit.Texture0);
-            _gl.BindTexture(TextureTarget.Texture2D, _chip8Texture);
-            _gl.BindVertexArray(_quadVao);
-            _gl.DrawArrays(PrimitiveType.Triangles, 0, 6);
-            _gl.BindVertexArray(0);
+            gl.UseProgram(_quadShader);
+            gl.Uniform1(_texUniformLoc, 0);
+            gl.ActiveTexture(TextureUnit.Texture0);
+            gl.BindTexture(TextureTarget.Texture2D, _chip8Texture);
+            gl.BindVertexArray(_quadVao);
+            gl.DrawArrays(PrimitiveType.Triangles, 0, 6);
+            gl.BindVertexArray(0);
 
             // Render ImGui on top
             _imguiController?.Render();
