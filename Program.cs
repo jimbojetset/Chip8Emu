@@ -190,7 +190,7 @@ namespace Chip8Emu
                     int waitTimeoutMs = _settingsWindow?.IsVisible == true ? 1 : 8;
                     bool sawEvent = _window.ProcessEvents(_chip8, waitTimeoutMs);
 
-                    bool shouldRender = _redrawRequested || sawEvent;
+                    bool shouldRender = _redrawRequested || sawEvent || _settingsWindow?.IsVisible == true;
                     if (shouldRender)
                     {
                         // Consume the current frame request up-front so requests raised during Draw()

@@ -40,6 +40,8 @@ namespace Chip8Emu
         private bool _applyDefaultLayout = true;
         private readonly bool _startCollapsed;
         private bool _collapseOnNextDraw;
+        private bool _lastCollapsedState;
+        private bool _collapseStateInitialized;
 
         // Quirk state (synced with Chip8)
         private bool _shiftQuirk;
@@ -264,6 +266,17 @@ namespace Chip8Emu
             bool isCollapsed = ImGui.IsWindowCollapsed();
             Vector2 windowPos = ImGui.GetWindowPos();
             Vector2 windowSize = ImGui.GetWindowSize();
+
+            if (!_collapseStateInitialized)
+            {
+                _lastCollapsedState = isCollapsed;
+                _collapseStateInitialized = true;
+            }
+            else if (_lastCollapsedState != isCollapsed)
+            {
+                _lastCollapsedState = isCollapsed;
+                _requestRedraw();
+            }
 
             if (showContents)
             {
