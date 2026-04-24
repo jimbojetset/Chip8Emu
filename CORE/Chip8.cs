@@ -71,7 +71,7 @@ namespace Chip8Emu.CORE
             set { frameSize = value; }
         }
 
-        private int cpuHz = 100000; //cycles per frame (default 60kHz)
+        private int cpuHz = 100000; //cycles per frame 
         public int CpuHz
         {
             get { return cpuHz; }
