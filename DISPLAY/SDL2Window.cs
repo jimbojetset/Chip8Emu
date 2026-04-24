@@ -293,8 +293,8 @@ namespace Chip8Emu
                 return;
 
             bool textureChanged = !_textureInitialized;
-            if (!textureChanged)
-            {
+            //if (!textureChanged)
+            //{
                 for (int i = 0; i < _lastVideoBuffer.Length; i++)
                 {
                     if (_lastVideoBuffer[i] != videoBuffer[i])
@@ -303,10 +303,10 @@ namespace Chip8Emu
                         break;
                     }
                 }
-            }
+            //}
 
-            if (textureChanged)
-            {
+            //if (textureChanged)
+            //{
                 // Convert CHIP-8 video buffer to RGB float texture data only when content changes.
                 for (int y = 0; y < CHIP8_HEIGHT; y++)
                 {
@@ -331,7 +331,7 @@ namespace Chip8Emu
                 {
                     gl.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, CHIP8_WIDTH, CHIP8_HEIGHT, PixelFormat.Rgb, PixelType.Float, data);
                 }
-            }
+            //}
 
             // Clear screen
             gl.ClearColor(0f, 0f, 0f, 1f);

@@ -47,6 +47,9 @@ namespace Chip8Emu
 
         // Quirk state (synced with Chip8)
         private bool _shiftQuirk;
+
+        // Speed state
+        private int _cpuHz;
         private bool _jumpQuirk;
         private bool _vfReset;
         private bool _memoryQuirk;
@@ -121,6 +124,7 @@ namespace Chip8Emu
             _clippingQuirk = _chip8.ClippingQuirk;
             _displayWaitQuirk = _chip8.DisplayWaitQuirk;
             _keyReleaseWaitQuirk = _chip8.KeyReleaseWaitQuirk;
+            _cpuHz = _chip8.CpuHz;
         }
 
         private void SyncToChip8()
@@ -132,6 +136,7 @@ namespace Chip8Emu
             _chip8.ClippingQuirk = _clippingQuirk;
             _chip8.DisplayWaitQuirk = _displayWaitQuirk;
             _chip8.KeyReleaseWaitQuirk = _keyReleaseWaitQuirk;
+            _chip8.CpuHz = _cpuHz;
         }
 
         private void RefreshRomList()
@@ -299,6 +304,22 @@ namespace Chip8Emu
                         DrawQuirksSection();
                         ImGui.EndTabItem();
                     }
+
+                    bool speedTabDisabled = _displayWaitQuirk;
+                    if (speedTabDisabled)
+                    {
+                        ImGui.BeginDisabled();
+                    }
+                    if (ImGui.BeginTabItem("Speed"))
+                    {
+                        DrawSpeedSection();
+                        ImGui.EndTabItem();
+                    }
+                    if (speedTabDisabled)
+                    {
+                        ImGui.EndDisabled();
+                    }
+
                     ImGui.EndTabBar();
                 }
             }
@@ -522,6 +543,22 @@ namespace Chip8Emu
                 SyncToChip8();
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("All quirks off");
+        }
+
+        private void DrawSpeedSection()
+        {
+            ImGui.PushTextWrapPos(0f);
+            ImGui.TextDisabled("Cycles per frame (only available when Display Wait is off)");
+            ImGui.PopTextWrapPos();
+            ImGui.Spacing();
+
+            if (ImGui.SliderInt("##CpuHz", ref _cpuHz, 1000, 100000, "%d cycles/frame"))
+            {
+                _chip8.CpuHz = _cpuHz;
+            }
+
+            ImGui.Spacing();
+            ImGui.TextDisabled($"~{_cpuHz / 1000}k cycles/s at 60fps");
         }
 
         private void DrawKeyboardSection()

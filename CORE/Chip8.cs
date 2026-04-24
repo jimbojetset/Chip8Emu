@@ -71,11 +71,11 @@ namespace Chip8Emu.CORE
             set { frameSize = value; }
         }
 
-        private int cpuHz = 25000; //cycles per frame (default 25kHz)
+        private int cpuHz = 100000; //cycles per frame (default 60kHz)
         public int CpuHz
         {
             get { return cpuHz; }
-            set { cpuHz = 25000; }
+            set { cpuHz = value; }
         }
 
         private const int VIDEO_WIDTH = 64;

@@ -779,7 +779,7 @@
     "description": "danm8ku.ch8",
     "quirks": {
       "ShiftQuirk": false,
-      "JumpQuirk": true,
+      "JumpQuirk": false,
       "VFReset": false,
       "MemoryQuirk": false,
       "ClippingQuirk": false,
