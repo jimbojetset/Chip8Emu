@@ -786,5 +786,19 @@
       "DisplayWaitQuirk": false,
       "KeyReleaseWaitQuirk": true
     }
+  },
+  {
+    "title": "MORSE DEMO",
+    "file": "morse_demo.ch8",
+    "description": "morse_demo.ch8",
+    "quirks": {
+      "ShiftQuirk": false,
+      "JumpQuirk": false,
+      "VFReset": true,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
+      "DisplayWaitQuirk": true,
+      "KeyReleaseWaitQuirk": true
+    }
   }
 ]
