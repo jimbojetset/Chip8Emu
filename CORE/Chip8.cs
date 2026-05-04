@@ -72,6 +72,7 @@ namespace Chip8Emu.CORE
         }
 
         private int cpuHz = 100000; //cycles per frame 
+        
         public int CpuHz
         {
             get { return cpuHz; }

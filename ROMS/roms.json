@@ -743,7 +743,15 @@
     "title": "ZERO PONG",
     "file": "ZeroPong [zeroZshadow, 2007].ch8",
     "description": "Zero Pong (2007), by zeroZshadow\u003Cbr/\u003E\u003Cbr/\u003EAnother pong game",
-    "quirks": null
+    "quirks": {
+      "ShiftQuirk": false,
+      "JumpQuirk": false,
+      "VFReset": true,
+      "MemoryQuirk": false,
+      "ClippingQuirk": false,
+      "DisplayWaitQuirk": false,
+      "KeyReleaseWaitQuirk": false
+    }
   },
   {
     "title": "GLITCH GHOST",
