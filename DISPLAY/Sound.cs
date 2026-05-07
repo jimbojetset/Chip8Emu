@@ -37,7 +37,6 @@ namespace Chip8Emu
                 string? name = null;
                 try { name = SDL_GetAudioDeviceName(i, 0); } catch { name = null; }
                 names.Add(name ?? string.Empty);
-                Console.WriteLine($"  [{i}] {name}");
             }
 
             return names;

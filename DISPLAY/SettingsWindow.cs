@@ -278,7 +278,10 @@ namespace Chip8Emu
                 bool clickedInsideSettings = ImGui.IsWindowHovered(
                     ImGuiHoveredFlags.RootAndChildWindows |
                     ImGuiHoveredFlags.AllowWhenBlockedByActiveItem);
-                if (!clickedInsideSettings)
+                // Don't collapse if a modal popup (e.g. audio device selector) is
+                // intercepting the click - the click was meant for the popup, not us.
+                bool popupActive = ImGui.IsPopupOpen(string.Empty, ImGuiPopupFlags.AnyPopup);
+                if (!clickedInsideSettings && !popupActive)
                 {
                     _collapseOnNextDraw = true;
                     _requestRedraw();
