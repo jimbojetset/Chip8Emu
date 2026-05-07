@@ -16,7 +16,37 @@ namespace Chip8Emu
         private static ushort _toneFrequency = 440;
         private static ushort _toneVolume = 16383;
 
-        public static void Initialize()
+        /// <summary>
+        /// Ensure the SDL audio subsystem is initialized and return the names of all
+        /// available playback devices (in the order SDL reports them).
+        /// </summary>
+        public static List<string> EnumerateDevices()
+        {
+            var names = new List<string>();
+
+            if (SDL_Init(SDL_INIT_AUDIO) < 0)
+            {
+                Console.WriteLine($"SDL_Init(SDL_INIT_AUDIO) failed: {SDL_GetError()}");
+                return names;
+            }
+
+            int deviceCount = SDL_GetNumAudioDevices(0);
+            Console.WriteLine($"SDL audio device count: {deviceCount}");
+            for (int i = 0; i < deviceCount; i++)
+            {
+                string? name = null;
+                try { name = SDL_GetAudioDeviceName(i, 0); } catch { name = null; }
+                names.Add(name ?? string.Empty);
+                Console.WriteLine($"  [{i}] {name}");
+            }
+
+            return names;
+        }
+
+        /// <summary>
+        /// Open the chosen audio device. Pass null to open the system default device.
+        /// </summary>
+        public static void Initialize(string? deviceName = null)
         {
             if (_audioInitialized) return;
 
@@ -37,57 +67,6 @@ namespace Chip8Emu
                 callback = null
             };
 
-            // Enumerate audio devices and optionally prompt the user to select one
-            int deviceCount = SDL_GetNumAudioDevices(0);
-            Console.WriteLine($"SDL audio device count: {deviceCount}");
-            string? deviceName = null;
-            var names = new System.Collections.Generic.List<string>();
-            for (int i = 0; i < deviceCount; i++)
-            {
-                string? name = null;
-                try { name = SDL_GetAudioDeviceName(i, 0); } catch { name = null; }
-                names.Add(name ?? string.Empty);
-                Console.WriteLine($"  [{i}] {name}");
-            }
-
-            if (deviceCount > 1)
-            {
-                Console.WriteLine("Multiple audio devices detected. Press Enter to use the system default device [0], or enter the index number of the device to use:");
-                Console.Write("> ");
-                try
-                {
-                    string? input = Console.ReadLine();
-                    if (!string.IsNullOrWhiteSpace(input))
-                    {
-                        if (int.TryParse(input.Trim(), out int idx) && idx >= 0 && idx < names.Count)
-                        {
-                            deviceName = names[idx];
-                            Console.WriteLine($"User selected device [{idx}] {deviceName}");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Invalid selection, using device [0].");
-                            deviceName = names[0];
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Using device [0].");
-                        deviceName = names[0];
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error reading device selection: {ex.Message}. Using device [0].");
-                    deviceName = names[0];
-                }
-            }
-            else if (deviceCount == 1)
-            {
-                deviceName = names.Count > 0 ? names[0] : null;
-                Console.WriteLine($"Single audio device available: {deviceName}");
-            }
-
             // If deviceName is null, SDL_OpenAudioDevice will open the system default device.
             _audioDevice = SDL_OpenAudioDevice(deviceName, 0, ref want, out _audioSpec, 0);
             if (_audioDevice == 0)
@@ -98,6 +77,7 @@ namespace Chip8Emu
 
             _audioInitialized = true;
             SDL_PauseAudioDevice(_audioDevice, 0); // Start audio playback
+            Console.WriteLine($"Audio device opened: {deviceName ?? "<default>"}");
         }
 
         public static void PlaySound(ushort frequency, int msDuration, ushort volume = 16383)

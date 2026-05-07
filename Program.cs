@@ -12,6 +12,7 @@ namespace Chip8Emu
         private static Chip8? _chip8;
         private static byte[]? _videoBuffer;
         private static SettingsWindow? _settingsWindow;
+        private static AudioDeviceSelector? _audioSelector;
         private static string _pendingRomPath = "";
         private static readonly object _romLoadLock = new();
         private static bool _useEmbeddedRom = false;
@@ -124,7 +125,16 @@ namespace Chip8Emu
             using (_window = new SDL2Window())
             {
                 Console.WriteLine("SDL2 window created successfully");
-                Sound.Initialize();
+
+                // Enumerate audio devices. If only one (or none) is available, open it
+                // immediately. Otherwise defer initialization until the user picks one
+                // through the modal popup drawn below.
+                var audioDevices = Sound.EnumerateDevices();
+                _audioSelector = new AudioDeviceSelector(audioDevices);
+                if (_audioSelector.IsCompleted)
+                {
+                    Sound.Initialize(_audioSelector.SelectedDeviceName);
+                }
                 _chip8 = new Chip8
                 {
                     ShiftQuirk = shiftQuirk,
@@ -214,6 +224,17 @@ namespace Chip8Emu
 
                         // Draw settings window
                         _settingsWindow?.Draw();
+
+                        // Draw the audio device selection modal (only renders while pending).
+                        if (_audioSelector != null && !_audioSelector.IsCompleted)
+                        {
+                            _audioSelector.Draw();
+                            if (_audioSelector.IsCompleted)
+                            {
+                                Sound.Initialize(_audioSelector.SelectedDeviceName);
+                            }
+                            _redrawRequested = true;
+                        }
 
                         // Show current ROM title in the window title
                         _window.SetRomTitle(_settingsWindow?.CurrentRomTitle);
