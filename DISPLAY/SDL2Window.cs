@@ -1,6 +1,4 @@
-using System.Runtime.InteropServices;
 using Chip8Emu.CORE;
-using SDL2;
 using Silk.NET.OpenGL;
 using static SDL2.SDL;
 
@@ -39,6 +37,7 @@ namespace Chip8Emu
 
         // Color configuration (normalized 0-1)
         private readonly float[] _onColor = { 50f / 255f, 205f / 255f, 50f / 255f }; // LimeGreen
+
         private readonly float[] _offColor = { 0f, 0f, 0f }; // Black
 
         public SDL2Window()
@@ -295,42 +294,42 @@ namespace Chip8Emu
             bool textureChanged = !_textureInitialized;
             //if (!textureChanged)
             //{
-                for (int i = 0; i < _lastVideoBuffer.Length; i++)
+            for (int i = 0; i < _lastVideoBuffer.Length; i++)
+            {
+                if (_lastVideoBuffer[i] != videoBuffer[i])
                 {
-                    if (_lastVideoBuffer[i] != videoBuffer[i])
-                    {
-                        textureChanged = true;
-                        break;
-                    }
+                    textureChanged = true;
+                    break;
                 }
+            }
             //}
 
             //if (textureChanged)
             //{
-                // Convert CHIP-8 video buffer to RGB float texture data only when content changes.
-                for (int y = 0; y < CHIP8_HEIGHT; y++)
+            // Convert CHIP-8 video buffer to RGB float texture data only when content changes.
+            for (int y = 0; y < CHIP8_HEIGHT; y++)
+            {
+                for (int x = 0; x < CHIP8_WIDTH; x++)
                 {
-                    for (int x = 0; x < CHIP8_WIDTH; x++)
-                    {
-                        int bufIndex = y * CHIP8_WIDTH + x;
-                        int texIndex = (y * CHIP8_WIDTH + x) * 3;
-                        bool isOn = videoBuffer[bufIndex] != 0;
-                        float[] color = isOn ? _onColor : _offColor;
-                        _textureData[texIndex + 0] = color[0];
-                        _textureData[texIndex + 1] = color[1];
-                        _textureData[texIndex + 2] = color[2];
-                    }
+                    int bufIndex = y * CHIP8_WIDTH + x;
+                    int texIndex = (y * CHIP8_WIDTH + x) * 3;
+                    bool isOn = videoBuffer[bufIndex] != 0;
+                    float[] color = isOn ? _onColor : _offColor;
+                    _textureData[texIndex + 0] = color[0];
+                    _textureData[texIndex + 1] = color[1];
+                    _textureData[texIndex + 2] = color[2];
                 }
+            }
 
-                System.Buffer.BlockCopy(videoBuffer, 0, _lastVideoBuffer, 0, _lastVideoBuffer.Length);
-                _textureInitialized = true;
+            System.Buffer.BlockCopy(videoBuffer, 0, _lastVideoBuffer, 0, _lastVideoBuffer.Length);
+            _textureInitialized = true;
 
-                // Upload texture data
-                gl.BindTexture(TextureTarget.Texture2D, _chip8Texture);
-                fixed (float* data = _textureData)
-                {
-                    gl.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, CHIP8_WIDTH, CHIP8_HEIGHT, PixelFormat.Rgb, PixelType.Float, data);
-                }
+            // Upload texture data
+            gl.BindTexture(TextureTarget.Texture2D, _chip8Texture);
+            fixed (float* data = _textureData)
+            {
+                gl.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, CHIP8_WIDTH, CHIP8_HEIGHT, PixelFormat.Rgb, PixelType.Float, data);
+            }
             //}
 
             // Clear screen

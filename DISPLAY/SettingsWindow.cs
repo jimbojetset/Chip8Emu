@@ -34,12 +34,14 @@ namespace Chip8Emu
 
         // UI layout/state
         private readonly bool _startCollapsed;
+
         private bool _isVisible = true;
         private bool _applyDefaultLayout = true;
         private bool _collapseOnNextDraw;
 
         // ROM metadata/state
         private RomEntry[] _romEntries = Array.Empty<RomEntry>();
+
         private int _selectedRomIndex = -1;
         private string _romsDirectory = "ROMS";
         private string _currentRomName = "";
@@ -50,6 +52,7 @@ namespace Chip8Emu
 
         // Speed state
         private int _cpuHz;
+
         private bool _jumpQuirk;
         private bool _vfReset;
         private bool _memoryQuirk;

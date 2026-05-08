@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace Chip8Emu.CORE
 {
     public class Chip8
     {
         private bool running = false;
+
         public bool Running
         {
             get { return running; }
@@ -14,6 +14,7 @@ namespace Chip8Emu.CORE
         }
 
         private bool shiftQuirk = false;
+
         public bool ShiftQuirk
         {
             get { return shiftQuirk; }
@@ -21,6 +22,7 @@ namespace Chip8Emu.CORE
         }
 
         private bool jumpQuirk = false;
+
         public bool JumpQuirk
         {
             get { return jumpQuirk; }
@@ -28,6 +30,7 @@ namespace Chip8Emu.CORE
         }
 
         private bool vFResetQuirk = true;
+
         public bool VFReset
         {
             get { return vFResetQuirk; }
@@ -35,6 +38,7 @@ namespace Chip8Emu.CORE
         }
 
         private bool memoryQuirk = false;
+
         public bool MemoryQuirk
         {
             get { return memoryQuirk; }
@@ -42,6 +46,7 @@ namespace Chip8Emu.CORE
         }
 
         private bool clippingQuirk = false;
+
         public bool ClippingQuirk
         {
             get { return clippingQuirk; }
@@ -49,6 +54,7 @@ namespace Chip8Emu.CORE
         }
 
         private bool displayWaitQuirk = true;
+
         public bool DisplayWaitQuirk
         {
             get { return displayWaitQuirk; }
@@ -56,6 +62,7 @@ namespace Chip8Emu.CORE
         }
 
         private bool keyReleaseWaitQuirk = true;
+
         public bool KeyReleaseWaitQuirk
         {
             get { return keyReleaseWaitQuirk; }
@@ -65,14 +72,15 @@ namespace Chip8Emu.CORE
         private bool waitingForVBlank = false;
 
         private int frameSize = 10;
+
         public int FrameSize
         {
             get { return frameSize; }
             set { frameSize = value; }
         }
 
-        private int cpuHz = 100000; //cycles per frame 
-        
+        private int cpuHz = 100000; //cycles per frame
+
         public int CpuHz
         {
             get { return cpuHz; }
@@ -80,12 +88,14 @@ namespace Chip8Emu.CORE
         }
 
         private const int VIDEO_WIDTH = 64;
+
         public static int VideoWidth
         {
             get { return VIDEO_WIDTH; }
         }
 
         private const int VIDEO_HEIGHT = 32;
+
         public static int VideoHeight
         {
             get { return VIDEO_HEIGHT; }
@@ -99,6 +109,7 @@ namespace Chip8Emu.CORE
         }
 
         private FIXED_BYTE_ARRAY video;
+
         public FIXED_BYTE_ARRAY Video
         {
             get { return video; }
@@ -140,6 +151,7 @@ namespace Chip8Emu.CORE
 
         // FX0A key wait state (original VIP waits for press AND release)
         private bool _waitingForKeyRelease = false;
+
         private int _pressedKey = -1;
 
         // Callback for display updates (called by main loop)
@@ -150,12 +162,12 @@ namespace Chip8Emu.CORE
 
         // Font base address (configurable: 0x000 or 0x050 are common)
         private int fontBaseAddress = 0x000;
+
         public int FontBaseAddress
         {
             get { return fontBaseAddress; }
             set { fontBaseAddress = value & 0x0FFF; } // constrain to 12-bit address space
         }
-
 
         private readonly byte[] FONTS = new byte[]
         {

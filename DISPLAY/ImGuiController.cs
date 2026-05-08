@@ -1,8 +1,8 @@
+using ImGuiNET;
+using Silk.NET.OpenGL;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using ImGuiNET;
-using Silk.NET.OpenGL;
 using static SDL2.SDL;
 
 namespace Chip8Emu
