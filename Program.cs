@@ -15,7 +15,7 @@ namespace Chip8Emu
         private static AudioDeviceSelector? _audioSelector;
         private static string _pendingRomPath = "";
         private static readonly object _romLoadLock = new();
-        private static bool _useEmbeddedRom = false;
+        private static bool _useEmbeddedRom = false; 
         private static volatile bool _redrawRequested = true;
 
         // Embedded test ROM - displays "CHIP8 EMULATOR" logo
