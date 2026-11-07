@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using Chip8Emu.CORE;
 using ImGuiNET;
 
-namespace Chip8Emu
+namespace Chip8Emu.DISPLAY
 {
     internal record RomQuirks(
         [property: JsonPropertyName("ShiftQuirk")] bool? ShiftQuirk,

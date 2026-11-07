@@ -2,7 +2,7 @@ using Chip8Emu.CORE;
 using Silk.NET.OpenGL;
 using static SDL2.SDL;
 
-namespace Chip8Emu
+namespace Chip8Emu.DISPLAY
 {
     public class SDL2Window : IDisposable
     {

@@ -1,7 +1,7 @@
 using System.Numerics;
 using ImGuiNET;
 
-namespace Chip8Emu
+namespace Chip8Emu.DISPLAY
 {
     /// <summary>
     /// Modal ImGui popup that prompts the user to choose an audio output device.

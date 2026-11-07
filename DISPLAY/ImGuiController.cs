@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static SDL2.SDL;
 
-namespace Chip8Emu
+namespace Chip8Emu.DISPLAY
 {
     /// <summary>
     /// Handles ImGui initialization, input processing, and rendering with SDL2 + OpenGL

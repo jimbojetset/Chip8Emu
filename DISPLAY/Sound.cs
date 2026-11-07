@@ -3,7 +3,7 @@ using static SDL2.SDL;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Chip8Emu
+namespace Chip8Emu.DISPLAY
 {
     internal static class Sound
     {

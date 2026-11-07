@@ -1,4 +1,5 @@
 using Chip8Emu.CORE;
+using Chip8Emu.DISPLAY;
 using ImGuiNET;
 using System.Diagnostics;
 using System.Reflection;

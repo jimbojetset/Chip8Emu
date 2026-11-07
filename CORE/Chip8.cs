@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Chip8Emu.DISPLAY;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Chip8Emu.CORE
