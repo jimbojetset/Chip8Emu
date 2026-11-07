@@ -1,6 +1,6 @@
 # Chip8Emu
 
-A cross-platform Chip-8 emulator built with C# .NET 9 and SDL2.
+A cross-platform Chip-8 emulator built with C# .NET 10 and SDL2.
 
 ## Description
 
@@ -19,7 +19,7 @@ Chip-8 is an interpreted programming language developed in the mid-1970s for 8-b
 ## Requirements
 
 ### Build Requirements
-- .NET 9.0 SDK or later
+- .NET 10.0 SDK or later
 - SDL2 library installed on your system
 
 ### Installing SDL2
